@@ -1,0 +1,21 @@
+[package]
+name = "dial-core-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM bindings for dial-core — consumed by wity-cli (Node.js) and ai-chat-wity-widget (browser)"
+license = "MIT"
+
+[lib]
+name = "dial_core_wasm"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+dial-core = { path = "../dial-core" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+js-sys = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true

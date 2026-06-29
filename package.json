@@ -1,0 +1,25 @@
+{
+  "name": "wity-dial-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "config": {
+    "staging_host_name": "gcp-vritti-dogfooding",
+    "staging_host_path": "/home/ankur/hais/dial-docs/"
+  },
+  "scripts": {
+    "build:core":        "cargo build -p dial-core --release",
+    "build:wasm":        "wasm-pack build packages/dial-core-wasm --target bundler --out-dir pkg --out-name dial-core",
+    "build:wasm:node":   "wasm-pack build packages/dial-core-wasm --target nodejs --out-dir pkg-node --out-name dial-core",
+    "build":             "npm run build:wasm && npm run build:wasm:node",
+    "check":             "cargo check --workspace",
+    "test":              "cargo test --workspace",
+    "docs:dev":          "vitepress dev docs",
+    "docs:build":        "vitepress build docs",
+    "docs:preview":      "vitepress preview docs",
+    "docs:deploy":       "node scripts/deploy-docs.js"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

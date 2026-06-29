@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "packages/dial-core",
+    "packages/dial-core-wasm",
+]
+resolver = "2"
+
+[profile.release]
+opt-level = "s"
+lto = true

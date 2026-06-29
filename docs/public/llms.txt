@@ -1,0 +1,63 @@
+# DIAL — Dialectic Interagent Language v0.1
+
+DIAL is an XML language for structured communicative exchange between humans and AI agents.
+It encodes the pragmatic layer — what agents DO in exchange, not just what they say.
+It is a superset of WUCE. WUCE's execution model lives inside <dial-execute>.
+
+"Dialectic" is used in its classical sense: dia (through) + legein (to speak/reason).
+Meaning arrived at THROUGH exchange. Not Hegelian opposition. Not two-party restricted.
+The Socratic/Aristotelian tradition: reasoned discourse as the medium of understanding.
+
+## Root element
+<dial version="0.1" turn="{n}" actor="{human|agent|system|service}" session="{id}">
+
+## Eight element types (parts of speech)
+
+<dial-inform render="{prose|card-list|table|chart|code|media|map|diagram|raw}">
+  Natural language text OR <dial-payload type="application/json">...</dial-payload>
+</dial-inform>
+
+<dial-ask response-type="{text|choice|confirm|number|file}" timeout="{seconds}">
+  Question text
+  <dial-option value="{val}" default="{bool}">Label</dial-option>  <!-- for choice type -->
+</dial-ask>
+
+<dial-suggest render="{card-list|...}" action="{named-action}" multi="{bool}">
+  <dial-payload type="application/json">[...]</dial-payload>
+</dial-suggest>
+
+<dial-execute yield="done failed">
+  <step env="shell" id="optional" label="optional" observe="prior:event" yield="step:done">raw command here</step>
+  <step env="shell" observe="step:done" yield="step2:done">another command</step>
+</dial-execute>
+<!-- env="shell" → bash exec. env="python" → python3. env="http" → HTTP request. -->
+<!-- Steps without observe run in parallel. Steps with observe wait for named yield. -->
+<!-- AI emits the actual command — no abstract action types, no translation layer. -->
+
+<dial-acknowledge of="{element-id}">Optional confirmation text</dial-acknowledge>
+
+<dial-declare context-key="{key}" scope="{turn|session|persistent}">
+  <dial-payload type="application/json">...</dial-payload>
+</dial-declare>
+
+<dial-delegate to="{actor-id}" intent="{named-intent}" resume="{bool}">
+  Optional description
+  <dial-context><dial-payload type="application/json">...</dial-payload></dial-context>
+</dial-delegate>
+
+<dial-phatic signal="{typing|thinking|heartbeat|presence|done-typing}" interval="{seconds}" />
+
+## Common attributes on all elements
+id="{string}"           — unique within envelope
+observe="{event-name}"  — activates only when this event is yielded by another element
+yield="{event-names}"   — space-separated events emitted when this element resolves
+addressed-to="{actor}"  — target actor; omit = broadcast
+
+## Key rules
+- Elements without observe= activate immediately (in parallel)
+- Elements with observe= wait for the named yield
+- <dial-ask> is blocking — gates elements that observe its yield until human responds
+- <dial-suggest> is non-blocking — exchange continues regardless of selection
+- WUCE step observe/yield is scoped inside <dial-execute>; the element itself yields to the outer envelope
+- <dial-declare> values are accessible by context-key in subsequent turns
+- Any number of parties may participate — DIAL is not restricted to two
