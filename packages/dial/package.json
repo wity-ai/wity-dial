@@ -14,5 +14,6 @@
   },
   "dependencies": {
     "dial-core-wasm": "file:../dial-core-wasm/pkg-node"
-  }
+  },
+  "bundleDependencies": ["dial-core-wasm"]
 }
