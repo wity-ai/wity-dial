@@ -21,7 +21,8 @@
     "docs:dev":          "vitepress dev docs",
     "docs:build":        "vitepress build docs",
     "docs:preview":      "vitepress preview docs",
-    "docs:deploy":       "node scripts/deploy-docs.js"
+    "docs:deploy":       "node scripts/deploy-docs.js",
+    "publish:dial":      "npm publish --workspace packages/dial"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"

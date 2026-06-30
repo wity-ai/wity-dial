@@ -9,8 +9,14 @@
   },
   "keywords": ["dial", "protocol", "parser", "router", "wasm", "wity"],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wity-ai/wity-dial.git",
+    "directory": "packages/dial"
+  },
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   },
   "dependencies": {
     "dial-core-wasm": "file:../dial-core-wasm/pkg-node"
