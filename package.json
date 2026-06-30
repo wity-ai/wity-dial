@@ -7,6 +7,9 @@
     "staging_host_name": "gcp-vritti-dogfooding",
     "staging_host_path": "/home/ankur/hais/dial-docs/"
   },
+  "workspaces": [
+    "packages/dial-knowledge"
+  ],
   "scripts": {
     "build:core":        "cargo build -p dial-core --release",
     "build:wasm":        "wasm-pack build packages/dial-core-wasm --target bundler --out-dir pkg --out-name dial-core",
