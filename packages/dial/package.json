@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "description": "DIAL protocol — JS layer over dial-core WASM. Exposes parse, DialSession, and DialRouter.",
   "type": "module",
-  "main": "./index.js",
+  "main": "./index.cjs",
+  "types": "./index.d.ts",
   "exports": {
-    ".": "./index.js"
+    ".": {
+      "import": "./index.js",
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    }
   },
   "keywords": ["dial", "protocol", "parser", "router", "wasm", "wity"],
   "license": "MIT",
