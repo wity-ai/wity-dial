@@ -36,7 +36,7 @@ The Socratic/Aristotelian tradition: reasoned discourse as the medium of underst
 
 <dial-acknowledge of="{element-id}">Optional confirmation text</dial-acknowledge>
 
-<dial-declare context-key="{key}" scope="{turn|session|persistent}">
+<dial-declare context-key="{key}">
   <dial-payload type="application/json">...</dial-payload>
 </dial-declare>
 

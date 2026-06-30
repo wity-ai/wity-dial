@@ -225,7 +225,6 @@ A declaration. Asserts a named fact into the shared context of the session. Futu
 ```xml
 <dial-declare id="set-artefact"
             context-key="active-artefact"
-            scope="session"
             yield="artefact:set">
   <dial-payload type="application/json">
     { "slug": "nike-campaign", "vectorSpace": "vs-abc123", "brandColor": "#f97316" }
@@ -236,16 +235,9 @@ A declaration. Asserts a named fact into the shared context of the session. Futu
 | Attribute | Type | Default | Description |
 |---|---|---|---|
 | `context-key` | string | required | Named key in shared context; overwrites any prior value for this key |
-| `scope` | enum | `session` | Lifetime of the declared value |
 | *(base attributes)* | | | All common attributes apply |
 
-### `scope` values
-
-| Value | Description |
-|---|---|
-| `turn` | Lives only for the current envelope; cleared after processing |
-| `session` | Persists for the duration of the session (default) |
-| `persistent` | Persists beyond session end; stored by the application layer |
+Persistence is a concern of the receiving layer (e.g. dial-knowledge), not of the protocol attribute. The declared fact is available for the remainder of the session; any cross-session persistence is handled by the knowledge store, keyed by environment identity.
 
 ---
 
@@ -351,7 +343,7 @@ An AI agent turn in a shopping assistance exchange. Informs the user of search r
 <dial version="0.1" turn="2" actor="agent" session="sess-shop-7712">
 
   <!-- Declare the active product domain into shared context -->
-  <dial-declare id="ctx-domain" context-key="product-domain" scope="session" yield="domain:set">
+  <dial-declare id="ctx-domain" context-key="product-domain" yield="domain:set">
     <dial-payload type="application/json">
       { "category": "footwear", "brand": "nike", "priceRange": [80, 200] }
     </dial-payload>

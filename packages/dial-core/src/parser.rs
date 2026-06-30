@@ -118,7 +118,6 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
         "dial-declare" => DialElement::Declare(DialDeclare {
             base,
             context_key: attr(attrs, "context-key"),
-            scope: attr(attrs, "scope").unwrap_or_else(|| "session".into()),
             text: Some(strip_payload_tags(inner).trim().to_string()).filter(|s| !s.is_empty()),
             payload: parse_payload(inner),
         }),

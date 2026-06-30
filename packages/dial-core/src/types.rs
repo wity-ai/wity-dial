@@ -136,7 +136,6 @@ pub struct DialDeclare {
     #[serde(flatten)]
     pub base: ElementBase,
     pub context_key: Option<String>,
-    pub scope: String,
     pub text: Option<String>,
     pub payload: Option<serde_json::Value>,
 }
