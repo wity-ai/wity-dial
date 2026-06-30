@@ -88,6 +88,7 @@ impl DialElement {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ElementBase {
     pub id: Option<String>,
     pub observe: Option<String>,
@@ -106,6 +107,7 @@ pub struct DialInform {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DialAsk {
     #[serde(flatten)]
     pub base: ElementBase,
@@ -132,6 +134,7 @@ pub struct DialSuggest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DialDeclare {
     #[serde(flatten)]
     pub base: ElementBase,

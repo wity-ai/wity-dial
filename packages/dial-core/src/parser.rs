@@ -55,17 +55,41 @@ fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
 
     let mut elements = Vec::new();
 
-    // Match dial-* elements — self-closing or with content
-    let el_re = Regex::new(r"(?s)<(dial-[\w]+)([^>]*?)(?:/>|>([\s\S]*?)</\1>)").unwrap();
+    // Find each <dial-* opening (or self-closing) tag; no backreference needed.
+    // Rust's regex crate does not support backreferences (\1), so we find the
+    // matching closing tag manually using str::find after the opening tag.
+    let open_tag_re = Regex::new(r"<(dial-[\w]+)([^>]*?)(/?>)").unwrap();
+    let mut search = inner;
 
-    for cap in el_re.captures_iter(inner) {
-        let tag = &cap[1];
-        let attrs = &cap[2];
-        let content = cap.get(3).map(|m| m.as_str()).unwrap_or("");
+    loop {
+        let Some(cap) = open_tag_re.captures(search) else { break };
 
-        if let Some(el) = parse_element(tag, attrs, content)? {
+        let tag_match = cap.get(0).unwrap();
+        let tag_name  = cap[1].to_string();
+        let attrs     = cap[2].to_string();
+        let close_br  = cap[3].to_string();
+        let after_open = tag_match.end();
+
+        let (content, consumed) = if close_br == "/>" {
+            // Self-closing: no content
+            (String::new(), after_open)
+        } else {
+            let closing = format!("</{}>", tag_name);
+            let rest = &search[after_open..];
+            if let Some(close_idx) = rest.find(closing.as_str()) {
+                (rest[..close_idx].to_string(), after_open + close_idx + closing.len())
+            } else {
+                // Malformed — no closing tag; skip past the '<' and keep scanning
+                search = &search[tag_match.start() + 1..];
+                continue;
+            }
+        };
+
+        if let Some(el) = parse_element(&tag_name, &attrs, &content)? {
             elements.push(el);
         }
+
+        search = &search[consumed..];
     }
 
     Ok(elements)
