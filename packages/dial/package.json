@@ -1,5 +1,5 @@
 {
-  "name": "@wity/dial",
+  "name": "@wity.ai/dial",
   "version": "0.1.0",
   "description": "DIAL protocol — JS layer over dial-core WASM. Exposes parse, DialSession, and DialRouter.",
   "type": "module",
@@ -20,8 +20,7 @@
     "directory": "packages/dial"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
+    "access": "public"
   },
   "dependencies": {
     "dial-core-wasm": "file:../dial-core-wasm/pkg-node"
