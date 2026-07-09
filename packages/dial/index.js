@@ -1,5 +1,5 @@
 /**
- * @wity/dial — DIAL protocol package
+ * @wity.ai/dial — DIAL protocol package
  *
  * Layered over dial-core (Rust/WASM):
  *
@@ -12,7 +12,7 @@
  *
  * Canonical usage:
  *
- *   import { parse, extractProse, DialSession, DialRouter, runStepGraph } from '@wity/dial';
+ *   import { parse, extractProse, DialSession, DialRouter, runStepGraph } from '@wity.ai/dial';
  *
  *   const session = new DialSession();
  *   const router  = new DialRouter()

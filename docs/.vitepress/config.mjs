@@ -93,9 +93,11 @@ export default defineConfig({
     },
 
     nav: [
-      { text: 'Guide',    link: '/guide/overview' },
-      { text: 'Schema',   link: '/guide/schema' },
-      { text: 'llms.txt', link: '/stack/dial/llms.txt' },
+      { text: 'Guide',      link: '/guide/overview' },
+      { text: 'Schema',     link: '/guide/schema' },
+      { text: 'JS Package', link: '/guide/js-package' },
+      { text: 'llms.txt',      link: '/stack/dial/llms.txt' },
+      { text: 'llms-full.txt', link: '/stack/dial/llms-full.txt' },
       {
         text: 'Wity Stack',
         items: [
@@ -114,6 +116,7 @@ export default defineConfig({
           { text: 'Overview',          link: '/guide/overview' },
           { text: 'Schema v0.1',       link: '/guide/schema' },
           { text: 'Relation to WUCE',  link: '/guide/wuce-relation' },
+          { text: 'JavaScript Package', link: '/guide/js-package' },
         ],
       },
       {

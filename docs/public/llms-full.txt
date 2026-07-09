@@ -1,0 +1,425 @@
+# DIAL — Dialectic Interagent Language v0.1 — Full Reference
+
+DIAL is an XML language for structured communicative exchange between humans and AI agents.
+It encodes the pragmatic layer — what agents DO in exchange, not just what they say.
+It is a superset of WUCE. WUCE's execution model lives inside <dial-execute>.
+
+"Dialectic" is used in its classical sense: dia (through) + legein (to speak/reason).
+Meaning arrived at THROUGH exchange. Not Hegelian opposition. Not two-party restricted.
+The Socratic/Aristotelian tradition: reasoned discourse as the medium of understanding.
+
+Intellectual lineage: Leibniz (characteristica universalis), Wittgenstein (meaning as use),
+Austin/Searle (speech act theory / illocutionary force), Peirce (triadic sign), FIPA ACL.
+What is new: LLMs can now produce well-formed DIAL naturally at runtime.
+
+---
+
+## 1. PROTOCOL REFERENCE
+
+### Root element
+
+<dial version="0.1" turn="{n}" actor="{human|agent|system|service}" session="{id}">
+  ...elements...
+</dial>
+
+Attributes:
+  version  — must be "0.1"
+  turn     — 1-based turn index (optional)
+  actor    — who produced this envelope
+  session  — session id for context scoping (optional)
+
+---
+
+### Eight element types (parts of speech)
+
+## <dial-inform>
+An assertion. Delivers information. No response expected.
+
+<dial-inform id="{id}" render="{prose|card-list|table|chart|code|media|map|diagram|raw}"
+             observe="{event}" yield="{events}" addressed-to="{actor}">
+  Natural language text OR <dial-payload type="application/json">...</dial-payload>
+</dial-inform>
+
+render values: prose (default), card-list, table, chart, code, media, map, diagram, raw
+
+## <dial-ask>
+An interrogative. Requests something. Blocking — gates elements that observe its yield.
+
+<dial-ask id="{id}" response-type="{text|choice|confirm|number|file}" timeout="{seconds}"
+          observe="{event}" yield="{events}" addressed-to="{actor}">
+  Question text
+  <dial-option value="{val}" default="{bool}" disabled="{bool}">Label</dial-option>
+</dial-ask>
+
+response-type values: text (default), choice, confirm, number, file
+<dial-option> only used with response-type="choice"
+
+## <dial-suggest>
+A proposal. Non-blocking — exchange continues regardless of selection.
+
+<dial-suggest id="{id}" render="{card-list|...}" action="{named-action}" multi="{bool}"
+              observe="{event}" yield="{events}">
+  <dial-payload type="application/json">[...]</dial-payload>
+</dial-suggest>
+
+## <dial-execute>
+An imperative. Executes a step graph. Contains WUCE-style steps with observe/yield.
+Steps carry raw executable commands — no translation layer, no abstract action types.
+The AI emits the actual command; the executor runs it directly.
+
+<dial-execute id="{id}" observe="{event}" yield="{events}">
+  <step env="shell" id="{id}" label="{label}" observe="{event}" yield="{events}">
+    command text
+  </step>
+  <step env="python" observe="{prior:event}" yield="{events}">
+    python code or script path
+  </step>
+  <step env="http" yield="{events}">
+    curl-style spec or JSON request descriptor
+  </step>
+</dial-execute>
+
+step env values: shell (bash exec), python (python3), http (fetch), extensible
+Steps without observe= run in parallel.
+Steps with observe= wait for the named yield from a prior step.
+Step yields are scoped inside <dial-execute>. The element itself yields to the outer envelope.
+
+## <dial-acknowledge>
+An affective. Signals receipt or understanding. No new information.
+
+<dial-acknowledge id="{id}" of="{element-id}" observe="{event}" yield="{events}">
+  Optional human-readable confirmation text
+</dial-acknowledge>
+
+## <dial-declare>
+A declaration. Asserts a named fact into shared session context.
+Future elements in this or subsequent turns may reference it by context-key.
+
+<dial-declare id="{id}" context-key="{key}" observe="{event}" yield="{events}">
+  <dial-payload type="application/json">...</dial-payload>
+</dial-declare>
+
+Note: XML attribute is context-key (kebab). In parsed JS: el.contextKey (camelCase).
+
+## <dial-delegate>
+A handoff. Transfers responsibility to another actor.
+
+<dial-delegate id="{id}" to="{actor-id}" intent="{named-intent}" resume="{bool}"
+               observe="{event}" yield="{events}">
+  Optional description
+  <dial-context>
+    <dial-payload type="application/json">...</dial-payload>
+  </dial-context>
+</dial-delegate>
+
+## <dial-phatic>
+A channel signal. No semantic payload. Typing indicators, heartbeats, presence.
+
+<dial-phatic signal="{typing|thinking|heartbeat|presence|done-typing}" interval="{seconds}" />
+
+---
+
+### Common attributes on all elements
+
+id="{string}"           — unique within envelope (auto-assigned if omitted)
+observe="{event-name}"  — activates only when this event is yielded by another element
+yield="{event-names}"   — space-separated events emitted when this element resolves
+addressed-to="{actor}"  — target actor id; omit = broadcast
+lang="{bcp47}"          — language tag for natural language content (default: "en")
+
+---
+
+### Child elements
+
+<dial-payload type="application/json" encoding="utf-8" schema="{uri}">
+  Structured data container. Used when content is not natural language text.
+</dial-payload>
+
+<dial-option value="{string}" default="{bool}" disabled="{bool}">
+  Label text
+</dial-option>
+Used only inside <dial-ask response-type="choice">.
+
+---
+
+### Observe/yield — two nested scopes
+
+Outer scope (DIAL envelope): element dependencies
+Inner scope (inside <dial-execute>): step dependencies
+
+Example:
+<dial version="0.1" actor="agent">
+  <dial-ask id="q1" response-type="confirm" yield="confirmed cancelled" />
+
+  <dial-execute id="op1" observe="confirmed" yield="op:done op:failed">
+    <step env="shell" id="a" yield="a:done">ls -la /path</step>
+    <step env="shell" id="b" observe="a:done" yield="b:done">cat /path/README.md</step>
+  </dial-execute>
+
+  <dial-inform id="result" observe="op:done" render="prose">
+    Operation completed.
+  </dial-inform>
+</dial>
+
+Outer: dial-ask → confirmed → dial-execute → op:done → dial-inform
+Inner: step-a → a:done → step-b → b:done
+Inner step yields are invisible to the outer scope.
+
+---
+
+### Key rules
+
+- Elements without observe= activate immediately, in parallel
+- Elements with observe= wait for the named yield from another element
+- <dial-ask> is blocking — nothing that observes its yield runs until human responds
+- <dial-suggest> is non-blocking — selection events available but exchange doesn't wait
+- <dial-declare> values are accessible by context-key in subsequent turns
+- Any number of parties may participate — DIAL is not restricted to two actors
+- A <dial> envelope with only <dial-execute> is valid — compatible with WUCE
+
+---
+
+### WUCE compatibility
+
+WUCE v2.3 steps map to DIAL <step> as follows:
+  stepName                              → id
+  stepDescription / stepMsg            → label
+  actionDomain + actionType + actionMeta → env + text content (raw command)
+  observe                              → observe (identical)
+  yield                                → yield (identical)
+  observationDomain                    → dropped (subsumed by env)
+
+Every valid WUCE envelope is a valid <dial-execute> block.
+
+---
+
+## 2. JAVASCRIPT PACKAGE — @wity.ai/dial
+
+npm install @wity.ai/dial
+
+Built on dial-core (Rust/WASM). WASM is pre-built and bundled — no Rust toolchain needed
+for consumers. Two entry points auto-selected by toolchain via package.json exports conditions.
+
+### Environment matrix
+
+  Environment        | Entry point          | parse() / extractProse()
+  -------------------|----------------------|-----------------------------
+  Node.js            | index.js             | Synchronous
+  Browser/Vite/webpack | index.browser.js   | Async (Promise) — WASM via fetch
+  CommonJS (require) | index.cjs            | Synchronous
+
+Vite picks up the "browser" export condition automatically. Node.js uses "node" condition.
+No bundler config or aliases needed.
+
+---
+
+### Node.js usage
+
+import { parse, extractProse, DialSession, DialRouter, runStepGraph } from '@wity.ai/dial';
+
+// Parse a DIAL envelope from AI response text (may contain surrounding prose)
+const envelope = parse(aiText);              // DialEnvelope | null
+const prose    = extractProse(aiText);       // string — text outside <dial> blocks
+
+const session = new DialSession();
+const router  = new DialRouter()
+  .on('dial-inform',  (el, ctx) => {
+    // el.render, el.text, el.payload
+  })
+  .on('dial-ask',     async (el, ctx) => {
+    // el.responseType, el.options, el.timeout
+    ctx.emit('choice:yes');                  // yield an event programmatically
+  })
+  .on('dial-execute', async (el, ctx) => {
+    const { results } = await runStepGraph(el.steps, async (step) => {
+      const output = await exec(step.command);
+      return { command: step.command, env: step.env, stdout: output, success: true };
+    });
+    ctx.session.recordResults(results);
+  })
+  .on('dial-declare', (el, ctx) => {
+    if (el.contextKey) ctx.session.declare(el.contextKey, el.payload ?? el.text);
+  })
+  .on('dial-suggest', (el, ctx) => {
+    // el.action, el.render, el.payload (array of option objects)
+  })
+  .on('dial-delegate', async (el, ctx) => {
+    // el.to, el.intent, el.payload (context for receiving actor)
+  });
+
+if (envelope) await router.route(envelope, session);
+
+---
+
+### Browser usage (Vite + vanilla JS)
+
+import { parse, extractProse, initDial, DialSession, DialRouter, runStepGraph }
+  from '@wity.ai/dial';
+
+// Optional: pre-load WASM at app startup to avoid cold-start latency on first parse()
+// If omitted, parse() auto-initialises on first call.
+await initDial();
+
+const session = new DialSession();
+const router  = new DialRouter()
+  .on('dial-inform',  (el, ctx) => { /* update DOM */ })
+  .on('dial-declare', (el, ctx) => {
+    if (el.contextKey) ctx.session.declare(el.contextKey, el.payload ?? el.text);
+  });
+
+chatWidget.onNewMessage(async (text) => {
+  const envelope = await parse(text);        // await — async in browser build
+  if (envelope) await router.route(envelope, session);
+});
+
+// extractProse is also async in browser build:
+const prose = await extractProse(text);
+
+---
+
+### API reference
+
+#### parse(text: string) → DialEnvelope | null  [Node]
+#### parse(text: string) → Promise<DialEnvelope | null>  [Browser]
+Parses the first <dial> envelope found in text. Returns null if none present.
+Input may contain surrounding prose — only the structured block is extracted and parsed.
+
+#### extractProse(text: string) → string  [Node]
+#### extractProse(text: string) → Promise<string>  [Browser]
+Returns text outside any <dial> block. Useful for rendering the natural language
+portion of a mixed response alongside DIAL-driven UI.
+
+#### initDial() → Promise<void>  [Browser only]
+Pre-loads the WASM binary via fetch. Safe to call multiple times (fetch happens once).
+Call at app startup to eliminate cold-start latency on the first parse().
+
+#### new DialSession(opts?: { maxResults?: number })
+Per-session state container. Two orthogonal streams:
+  .declare(key: string, value: unknown) → void
+      Store a declared context value (from handling <dial-declare>).
+  .getDeclared() → Record<string, unknown>
+      Defensive snapshot of all declared context.
+  .recordResults(results: DialExecutionResult[]) → void
+      Append execution results. Rolling window (default: last 10, configurable via maxResults).
+  .getLastResults() → DialExecutionResult[]
+      Defensive snapshot of recent execution results.
+  .clear() → void
+      Reset all state (declared + results).
+
+#### new DialRouter()
+Dispatches elements from a parsed envelope to registered handlers, respecting
+the observe/yield dependency graph. Handlers for unknown types are silently skipped.
+
+  .on(type: string, handler: ElementHandler) → this   (chainable)
+  .route(envelope: DialEnvelope, session: DialSession) → Promise<void>
+
+ElementHandler: (el: DialElementNode, ctx: RouteContext) => Promise<void> | void
+RouteContext: { session: DialSession, emit: (event: string) => void }
+
+ctx.emit(event) — yield an event programmatically from inside a handler.
+Used by dial-ask handlers to signal which choice/confirm outcome occurred,
+allowing downstream elements that observe those events to activate.
+
+#### runStepGraph(steps, executor, initialYielded?) → Promise<{ results, yielded }>
+Runs the inner observe/yield dependency loop for a <dial-execute> step array.
+Use inside a 'dial-execute' handler to sequence steps correctly.
+
+  steps         — el.steps from a DialElementNode of type 'dial-execute'
+  executor      — async (step: DialStepNode) => DialExecutionResult
+  initialYielded — optional Set<string> of pre-yielded event names
+
+Returns:
+  results — DialExecutionResult[] in completion order
+  yielded — Set<string> of all events yielded by the step graph
+
+---
+
+### TypeScript shapes
+
+// Parsed envelope (return value of parse())
+interface DialEnvelope {
+  attributes: { version?: string; turn?: number; actor?: string; session?: string };
+  elements:   DialElementNode[];
+  raw:        string;
+}
+
+// Element node (union of all element types via discriminated `type` field)
+interface DialElementNode {
+  type:         string;          // 'dial-inform' | 'dial-ask' | 'dial-execute' | etc.
+  id?:          string;
+  observe?:     string;
+  yield?:       string[];
+  addressedTo?: string;
+  // dial-inform / dial-declare / dial-phatic (signal in text?)
+  render?:      string;
+  text?:        string;
+  payload?:     unknown;
+  // dial-ask
+  responseType?: string;
+  timeout?:      number;
+  options?:      DialOption[];
+  // dial-execute
+  steps?:       DialStepNode[];
+  // dial-suggest
+  action?:      string;
+  // dial-declare
+  contextKey?:  string;          // XML: context-key → JS: contextKey (camelCase)
+  // dial-acknowledge
+  of?:          string;
+  // dial-phatic
+  signal?:      string;
+  // dial-delegate
+  to?:          string;
+  intent?:      string;
+}
+
+interface DialStepNode {
+  env:      string;    // 'shell' | 'python' | 'http' | custom
+  id?:      string;
+  label?:   string;
+  observe?: string;
+  yield?:   string[];
+  command:  string;    // raw command — AI emits this directly
+}
+
+interface DialOption {
+  value:   string;
+  label:   string;
+  default: boolean;
+}
+
+interface DialExecutionResult {
+  command: string;
+  env:     string;
+  stdout:  string;
+  stderr:  string;
+  success: boolean;
+  error?:  string;
+}
+
+---
+
+### Build targets (contributors / monorepo)
+
+The WASM is built via wasm-pack from packages/dial-core-wasm (Rust):
+
+  npm run build:wasm:node   # --target nodejs  → pkg-node/ (synchronous fs loader)
+  npm run build:wasm:web    # --target web     → pkg-web/  (async fetch loader)
+  npm run build             # both
+
+pkg-node/ is consumed by the Node.js entry (parse.js via createRequire).
+pkg-web/ is consumed by the browser entry (parse.browser.js — lazy async init, cached).
+
+After build:wasm:web, pkg-web/package.json name is auto-patched to "dial-core-wasm-web"
+to avoid collision with the pkg-node package in node_modules.
+
+Both are included in bundleDependencies — the published @wity.ai/dial tarball is self-contained.
+
+---
+
+### Knowledge persistence — @wity/dial-knowledge (separate package)
+
+import { KnowledgeStore, FileAdapter } from '@wity/dial-knowledge';
+
+Provides cross-session persistence of declared context and execution results.
+Separate concern from the protocol layer — not included in @wity.ai/dial.

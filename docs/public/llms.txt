@@ -61,3 +61,62 @@ addressed-to="{actor}"  — target actor; omit = broadcast
 - WUCE step observe/yield is scoped inside <dial-execute>; the element itself yields to the outer envelope
 - <dial-declare> values are accessible by context-key in subsequent turns
 - Any number of parties may participate — DIAL is not restricted to two
+
+## JavaScript package — @wity.ai/dial
+
+npm install @wity.ai/dial
+
+### Node.js (synchronous)
+import { parse, extractProse, DialSession, DialRouter, runStepGraph } from '@wity.ai/dial';
+
+const envelope = parse(aiText);          // DialEnvelope | null — synchronous
+const prose    = extractProse(aiText);   // string — text outside <dial> blocks
+
+### Browser / Vite (async — WASM loaded via fetch)
+import { parse, extractProse, initDial, DialSession, DialRouter } from '@wity.ai/dial';
+// Vite picks up the "browser" export condition automatically. No config needed.
+
+await initDial();                        // optional pre-load; auto-called on first parse()
+const envelope = await parse(aiText);   // Promise<DialEnvelope | null>
+const prose    = await extractProse(aiText); // Promise<string>
+
+### DialSession — per-session state
+const session = new DialSession({ maxResults: 10 });
+session.declare(key, value)      // store declared context (from <dial-declare>)
+session.getDeclared()            // → Record<string, unknown>
+session.recordResults(results)   // append execution results (rolling window)
+session.getLastResults()         // → DialExecutionResult[]
+session.clear()
+
+### DialRouter — observe/yield-aware element dispatcher
+const router = new DialRouter()
+  .on('dial-inform',  (el, ctx) => { /* el.text, el.render, el.payload */ })
+  .on('dial-ask',     async (el, ctx) => { ctx.emit('choice:yes'); })
+  .on('dial-execute', async (el, ctx) => {
+    const { results } = await runStepGraph(el.steps, myExecutor);
+    ctx.session.recordResults(results);
+  })
+  .on('dial-declare', (el, ctx) => {
+    if (el.contextKey) ctx.session.declare(el.contextKey, el.payload ?? el.text);
+  });
+
+await router.route(envelope, session);
+// ctx.emit(event) — programmatically yield an event from a handler
+// runStepGraph(steps, executor) — inner observe/yield loop for <dial-execute> steps
+
+### DialEnvelope shape (from parse())
+{ attributes: { version, turn, actor, session }, elements: DialElementNode[], raw: string }
+
+### DialElementNode shape
+{ type, id?, observe?, yield?, addressedTo?,
+  render?, text?, payload?,            // dial-inform / dial-declare
+  responseType?, timeout?, options?,   // dial-ask
+  steps?,                              // dial-execute  →  DialStepNode[]
+  action?,                             // dial-suggest
+  contextKey?,                         // dial-declare
+  of?,                                 // dial-acknowledge
+  signal?,                             // dial-phatic
+  to?, intent? }                       // dial-delegate
+
+### DialStepNode shape (inside dial-execute)
+{ env, id?, label?, observe?, yield?, command }

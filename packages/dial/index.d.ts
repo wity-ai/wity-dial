@@ -93,5 +93,10 @@ export function runStepGraph(
   initialYielded?: Set<string>
 ): Promise<{ results: DialExecutionResult[]; yielded: Set<string> }>;
 
+// Node.js build — synchronous
 export function parse(text: string): DialEnvelope | null;
 export function extractProse(text: string): string;
+
+// Browser build (index.browser.js) — async; WASM loaded via fetch on first call
+// These replace the synchronous signatures above when the browser condition is resolved.
+export function initDial(): Promise<void>;

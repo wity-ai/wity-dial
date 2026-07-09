@@ -7,9 +7,11 @@
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
+      "browser": "./index.browser.js",
+      "node":    "./index.js",
+      "import":  "./index.js",
       "require": "./index.cjs",
-      "types": "./index.d.ts"
+      "types":   "./index.d.ts"
     }
   },
   "keywords": ["dial", "protocol", "parser", "router", "wasm", "wity"],
@@ -23,7 +25,8 @@
     "access": "public"
   },
   "dependencies": {
-    "dial-core-wasm": "file:../dial-core-wasm/pkg-node"
+    "dial-core-wasm":     "file:../dial-core-wasm/pkg-node",
+    "dial-core-wasm-web": "file:../dial-core-wasm/pkg-web"
   },
-  "bundleDependencies": ["dial-core-wasm"]
+  "bundleDependencies": ["dial-core-wasm", "dial-core-wasm-web"]
 }
