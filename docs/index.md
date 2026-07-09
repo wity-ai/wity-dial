@@ -35,7 +35,7 @@ DIAL is a language for structured communicative exchange between humans and AI a
 The word "dialectic" is used in its classical sense: *dia* (through) + *legein* (to speak, to reason). Meaning arrived at *through* exchange. Not Hegelian opposition, not restricted to two parties — the Socratic and Aristotelian tradition of reasoned discourse as the medium through which understanding emerges.
 
 > For AI coding agents:
-> [llms.txt](/stack/dial/llms.txt) · [llms-full.txt](/stack/dial/llms-full.txt)
+> [llms.txt](/llms.txt) · [llms-full.txt](/llms-full.txt)
 
 ## Lineage
 
