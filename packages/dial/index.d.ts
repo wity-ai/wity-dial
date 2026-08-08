@@ -51,6 +51,15 @@ export interface DialElementNode {
   intent?: string | null;
 }
 
+/**
+ * Consumer-facing DIAL element — the shape emitted by the wity-chat widget
+ * to host applications via onDialEvent / DIAL_EVENT postMessage.
+ *
+ * Mirrors DialElementNode but omits routing-internal fields (observe, yield,
+ * timeout, steps) that the widget resolves before emission.
+ */
+export type DialEventElement = Omit<DialElementNode, 'observe' | 'yield' | 'timeout' | 'steps'>;
+
 export interface DialEnvelope {
   attributes: DialAttributes;
   elements: DialElementNode[];
