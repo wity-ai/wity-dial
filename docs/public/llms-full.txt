@@ -388,6 +388,10 @@ interface DialOption {
   default: boolean;
 }
 
+// Consumer-facing element — what the wity-chat widget delivers via onDialEvent.
+// Omits routing internals that the widget resolves before emission.
+type DialEventElement = Omit<DialElementNode, 'observe' | 'yield' | 'timeout' | 'steps'>;
+
 interface DialExecutionResult {
   command: string;
   env:     string;

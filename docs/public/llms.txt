@@ -107,7 +107,7 @@ await router.route(envelope, session);
 ### DialEnvelope shape (from parse())
 { attributes: { version, turn, actor, session }, elements: DialElementNode[], raw: string }
 
-### DialElementNode shape
+### DialElementNode shape (full protocol — for parsers/routers)
 { type, id?, observe?, yield?, addressedTo?,
   render?, text?, payload?,            // dial-inform / dial-declare
   responseType?, timeout?, options?,   // dial-ask
@@ -117,6 +117,12 @@ await router.route(envelope, session);
   of?,                                 // dial-acknowledge
   signal?,                             // dial-phatic
   to?, intent? }                       // dial-delegate
+
+### DialEventElement — consumer-facing type
+Omit<DialElementNode, 'observe' | 'yield' | 'timeout' | 'steps'>
+The shape emitted by the wity-chat widget to host apps via onDialEvent.
+Routing internals (observe/yield/timeout/steps) are resolved by the widget
+before emission — consumer apps receive only the semantic fields.
 
 ### DialStepNode shape (inside dial-execute)
 { env, id?, label?, observe?, yield?, command }
