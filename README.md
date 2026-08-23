@@ -1,6 +1,6 @@
 # wity-dial
 
-DIAL — Dialectic Interagent Language. An XML protocol for structured communicative exchange between any participants in an exchange — humans, AI agents, systems, and services. Rust parser compiled to WASM, with a JavaScript layer for Node.js and browser.
+DIAL — Dialectic Interagent Language. An XML protocol for structured performative exchange between any participants — humans, AI agents, systems, and services. Rust parser compiled to WASM, with a JavaScript layer for Node.js and browser.
 
 **[Full documentation → wity.ai/stack/dial](https://www.wity.ai/stack/dial/)**
 

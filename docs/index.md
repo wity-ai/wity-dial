@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: DIAL
-  tagline: Dialectic Interagent Language — a language for structured communicative exchange between any participants in an exchange — humans, AI agents, systems, and services.
+  tagline: Dialectic Interagent Language — a language for structured performative exchange between any participants — humans, AI agents, systems, and services.
   actions:
     - theme: brand
       text: Overview
@@ -30,7 +30,7 @@ features:
 
 **Dialectic Interagent Language** — v0.1
 
-DIAL is a language for structured communicative exchange between any participants in an exchange — humans, AI agents, systems, and services. It encodes not what agents say but what they *do* — the pragmatic layer of agent interaction that existing protocols leave unaddressed.
+DIAL is a language for structured performative exchange between any participants — humans, AI agents, systems, and services. It encodes not what agents say but what they *do* — the pragmatic layer of agent interaction that existing protocols leave unaddressed.
 
 The word "dialectic" is used in its classical sense: *dia* (through) + *legein* (to speak, to reason). Meaning arrived at *through* exchange. Not Hegelian opposition, not restricted to two parties — the Socratic and Aristotelian tradition of reasoned discourse as the medium through which understanding emerges.
 

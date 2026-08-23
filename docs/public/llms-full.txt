@@ -1,6 +1,6 @@
 # DIAL — Dialectic Interagent Language v0.1 — Full Reference
 
-DIAL is an XML language for structured communicative exchange between any participants — humans, AI agents, systems, and services.
+DIAL is an XML language for structured performative exchange between any participants — humans, AI agents, systems, and services.
 It encodes the pragmatic layer — what agents DO in exchange, not just what they say.
 It is a superset of WUCE. WUCE's execution model lives inside <dial-execute>.
 
