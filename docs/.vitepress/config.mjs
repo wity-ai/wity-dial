@@ -96,6 +96,7 @@ export default defineConfig({
       { text: 'Guide',      link: '/guide/overview' },
       { text: 'Schema',     link: '/guide/schema' },
       { text: 'JS Package', link: '/guide/js-package' },
+      { text: 'Patterns',   link: '/guide/patterns' },
       { text: 'llms.txt',      link: '/stack/dial/llms.txt' },
       { text: 'llms-full.txt', link: '/stack/dial/llms-full.txt' },
       {
@@ -117,6 +118,7 @@ export default defineConfig({
           { text: 'Schema v0.1',       link: '/guide/schema' },
           { text: 'Relation to WUCE',  link: '/guide/wuce-relation' },
           { text: 'JavaScript Package', link: '/guide/js-package' },
+          { text: 'Patterns & Composability', link: '/guide/patterns' },
         ],
       },
       {
