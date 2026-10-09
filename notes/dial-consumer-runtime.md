@@ -178,6 +178,21 @@ Implementations:
 
 ## 8. Plan
 
+**Status (2026-10-09):** step 1 built, uncommitted at the time of writing.
+- `packages/dial-runtime` (`@wity.ai/dial-runtime`, private, in this workspace): `Conversation` (the turn loop and
+  lifecycle above), `outcomeReply`, and test humans (`policyHuman`, `scriptedHuman`). 12 model-free tests cover
+  done / invalid / unknown action / read-only / failed / dismissed / edit (incl. an invalid edit) / superseded / ask /
+  no reply / turn limit / plain-text replies / outcome XML round-trip.
+- The thoughtbook domain lives with its vocabulary: `wity-authoring/src/dial-domain.js` (`thoughtbookDomain`) —
+  actions with `mutates` / `destructive`, schema validation with the failing field, a readable preview per command,
+  the local executor (the live document), and a board-outline context. End-to-end tests replay Sage's
+  2026-10-09 replies (accept → row added; invalid → corrected without reaching the person; refused at run time →
+  failed with the reason).
+- The board context is the `doc.outline` JSON for now; wity-app's richer `<dial-context>` moves into the domain in
+  step 3, so app and CLI send the same snapshot.
+- **Node ≥ 17:** the DIAL parser's WebAssembly uses `externref`, which Node 16 can't load. The runtime's surfaces
+  (wity-cli, browsers) are on Node 20 / browsers; a Node 16 service (e.g. vritti-*) couldn't host it as is.
+
 1. The runtime core with the thoughtbook plug-in and the local executor; model-free tests for every lifecycle path.
    Reproduce the stuck accept and the action-name label there.
 2. The wity-cli TUI mode against the real Sage (artefact, board context, outcome replies).

@@ -9,7 +9,8 @@
   },
   "workspaces": [
     "packages/dial",
-    "packages/dial-knowledge"
+    "packages/dial-knowledge",
+    "packages/dial-runtime"
   ],
   "scripts": {
     "build:core":        "cargo build -p dial-core --release",

@@ -1,0 +1,12 @@
+{
+  "name": "@wity.ai/dial-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DIAL consumer runtime — one conversation with an agent: the turn loop, the suggestion lifecycle (validate, preview, human decides, outcome reported back) and timeouts. Domain-agnostic; domains and surfaces plug in.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": { ".": "./index.js" },
+  "scripts": { "test": "node --test test/" },
+  "dependencies": { "@wity.ai/dial": "file:../dial" },
+  "license": "MIT"
+}
