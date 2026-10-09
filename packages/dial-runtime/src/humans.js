@@ -5,7 +5,7 @@
  *   decide(suggestion) → { accept: true } | { dismiss: true } | { edit: payload } | { say: text }
  *       suggestion: { id, action, preview, text, payload, destructive }
  *       `say` = the person wrote something else instead of deciding (the suggestion is superseded)
- *   answer(ask)        → string   ask: { text, responseType, options }
+ *   answer(ask)        → string, or '' / null for no answer (the question stands)   ask: { text, responseType, options }
  */
 
 /** Always the same decision ('accept' or 'dismiss'); answers asks with `answerWith`. */

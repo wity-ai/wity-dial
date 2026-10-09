@@ -5,7 +5,7 @@
  * DIAL → its elements are handled in order:
  *
  *   dial-inform / dial-acknowledge   → shown (onEvent 'inform')
- *   dial-ask                         → the human answers; the answer goes back on the next turn
+ *   dial-ask                         → the human answers; the answer goes back on the next turn (no answer → no turn)
  *   dial-suggest (+ its declare)     → a suggestion:
  *        unknown action / invalid payload → outcome 'invalid', never shown to the human
  *        read-only action                 → run at once → 'done' (with its result) or 'failed'
@@ -146,7 +146,11 @@ export class Conversation {
             } else if (el.type === 'dial-ask') {
                 const ask = { text: el.text ?? '', responseType: el.responseType, options: el.options ?? [] };
                 this.#onEvent({ type: 'ask', ...ask });
-                if (this.#pendingText === null) answer = String(await this.#human.answer(ask) ?? '');
+                if (this.#pendingText === null) {
+                    // no answer (null / empty) = the person hasn't answered: the question stands and no turn follows
+                    const given = String(await this.#human.answer(ask) ?? '');
+                    if (given.trim()) answer = given;
+                }
             } else if (el.type === 'dial-suggest') {
                 // its payload: its own <dial-payload>, else the declare that follows it
                 let payload = el.payload ?? undefined;

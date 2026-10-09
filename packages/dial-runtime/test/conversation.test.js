@@ -226,3 +226,10 @@ test('an answer the agent never received (the send failed) is not lost: it goes 
     await conversation.say('thanks');
     assert.doesNotMatch(sent[3], /the first one/);                  // sent once
 });
+
+test('a question nobody answers ends the turn — no empty message is sent', async () => {
+    const agent = scriptedAgent([dial('<dial-inform>Added.</dial-inform><dial-ask>What next?</dial-ask>')]);
+    const result = await new Conversation({ agent, domain: notesDomain(), human: policyHuman('accept') }).say('add it');
+    assert.equal(result.status, 'idle');
+    assert.equal(agent.sent.length, 1);
+});
