@@ -38,7 +38,7 @@ export interface DialElementNode {
   options?: DialOption[];
   // dial-execute
   steps?: DialStepNode[];
-  // dial-suggest
+  // dial-suggest (`text` is its human-readable proposal)
   action?: string | null;
   // dial-declare
   contextKey?: string | null;

@@ -88,22 +88,25 @@ Rules:
 
 ### 4.3 Outcome replies
 
-Told to the agent with DIAL's own elements — no spec change:
+Told to the agent with DIAL's own elements — no spec change. `dial-acknowledge` closes the loop (short human text;
+per the schema it carries no data), and `dial-declare` asserts the outcome as a fact in the session:
 
 ```xml
 <dial>
-  <dial-acknowledge of="sg-3" yield="matrix.entry.add:failed">
+  <dial-acknowledge of="sg-3" yield="sg-3:failed">Couldn't add the row.</dial-acknowledge>
+  <dial-declare context-key="outcome:sg-3">
     <dial-payload type="application/json">
-      {"status":"failed","code":"invalid-payload","field":"fields.impact",
+      {"status":"failed","action":"matrix.entry.add","code":"invalid-payload","field":"fields.impact",
        "hint":"impact must be one of 'high', 'medium', 'low' (or '' to clear)"}
     </dial-payload>
-  </dial-acknowledge>
+  </dial-declare>
 </dial>
 ```
 
 `status` ∈ `done` (with `result`) · `failed` · `invalid` · `dismissed` · `superseded` · `undone`. The agent's
 directive explains how to react: retry once on `invalid` / `failed` when the hint says how, continue on `done`,
-move on (or ask) on `dismissed`.
+move on (or ask) on `dismissed`. (Decided 2026-10-09: an earlier draft put the payload inside `dial-acknowledge`,
+which the schema and parser don't support.)
 
 ### 4.4 Domain plug-in contract
 
@@ -162,10 +165,16 @@ Implementations:
 3. **Does the backend pass a DIAL outcome reply through as-is?** Today replies are plain text; confirm the agent
    receives the XML verbatim.
 4. **Directive changes:** Sage must be told the outcome format and how to react (one new control-vector section).
-5. **Suggestion ids:** ask agents to put `id` on `dial-suggest`, or always assign one in the runtime.
-6. **Several suggestions in one reply:** today the app handles one suggest + declare per response; decide whether
+5. **Suggestion text (decided 2026-10-09):** `dial-suggest` may carry text content — its human-readable
+   proposal. Added to the schema and the parser (`text` on the parsed element); before, the parser dropped it, which
+   is why the app's cards fell back to the action name. The runtime still prefers the domain's `preview()`.
+6. **Suggestion ids:** ask agents to put `id` on `dial-suggest`, or always assign one in the runtime.
+7. **Several suggestions in one reply:** today the app handles one suggest + declare per response; decide whether
    the runtime queues them.
-7. **Legacy action names** (`add-block`, …): stay accepted by the app until no directive mentions them.
+8. **Legacy action names** (`add-block`, …): stay accepted by the app until no directive mentions them.
+9. **dial-knowledge** (cross-conversation memory, already on wity-graph): when a consumer adopts it, move its storage
+   from JSON snapshots to `<wity-knowledge>` (like boards, systems, workbooks) and bump its graph-headless pin; outcomes
+   could then feed it. Not needed for step 1.
 
 ## 8. Plan
 

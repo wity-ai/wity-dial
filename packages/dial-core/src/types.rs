@@ -130,6 +130,9 @@ pub struct DialSuggest {
     pub base: ElementBase,
     pub render: String,
     pub action: Option<String>,
+    /// The human-readable proposal (the element's text content, payload excluded) — what a receiver shows when
+    /// asking whether to take the action.
+    pub text: Option<String>,
     pub payload: Option<serde_json::Value>,
 }
 

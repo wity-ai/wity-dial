@@ -144,6 +144,10 @@ A proposal. Presents options the receiver may act on. Unlike `<dial-ask>`, selec
 | `multi` | boolean | `false` | Whether multiple items can be selected |
 | *(base attributes)* | | | All common attributes apply |
 
+Content (text node, outside any `<dial-payload>`) is optional: the human-readable proposal a receiver shows when
+asking whether to take the action — e.g. `<dial-suggest action="add-card">Add a Methodology card?</dial-suggest>`.
+Parsed as `text`, alongside `payload`.
+
 **Key distinction from `<dial-ask>`:** `<dial-suggest>` does not gate the exchange. Subsequent elements do not need to `observe` its yield to proceed. It is a non-blocking proposal; `<dial-ask>` is a blocking question.
 
 ---

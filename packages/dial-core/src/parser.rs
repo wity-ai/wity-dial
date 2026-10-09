@@ -136,6 +136,7 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
             base,
             render: attr(attrs, "render").unwrap_or_else(|| "card-list".into()),
             action: attr(attrs, "action"),
+            text: Some(strip_payload_tags(inner).trim().to_string()).filter(|s| !s.is_empty()),
             payload: parse_payload(inner),
         }),
 
