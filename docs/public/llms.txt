@@ -23,6 +23,7 @@ The Socratic/Aristotelian tradition: reasoned discourse as the medium of underst
 </dial-ask>
 
 <dial-suggest render="{card-list|...}" action="{named-action}" multi="{bool}">
+  Optional text: the human-readable proposal ("Add a Methodology card?") — parsed as text, alongside payload
   <dial-payload type="application/json">[...]</dial-payload>
 </dial-suggest>
 
@@ -112,7 +113,7 @@ await router.route(envelope, session);
   render?, text?, payload?,            // dial-inform / dial-declare
   responseType?, timeout?, options?,   // dial-ask
   steps?,                              // dial-execute  →  DialStepNode[]
-  action?,                             // dial-suggest
+  action?,                             // dial-suggest (its text = the human-readable proposal)
   contextKey?,                         // dial-declare
   of?,                                 // dial-acknowledge
   signal?,                             // dial-phatic
@@ -126,3 +127,45 @@ before emission — consumer apps receive only the semantic fields.
 
 ### DialStepNode shape (inside dial-execute)
 { env, id?, label?, observe?, yield?, command }
+
+## Consumer runtime — @wity.ai/dial-runtime (packages/dial-runtime; not yet on public npm)
+
+One conversation with a DIAL-speaking agent: the turn loop and the life of each <dial-suggest>.
+Adds nothing to the schema — outcomes are reported with <dial-acknowledge> + <dial-declare>.
+
+import { Conversation, outcomeReply, policyHuman, scriptedHuman } from '@wity.ai/dial-runtime';
+
+const conversation = new Conversation({
+  agent:  { send: async (message) => replyText },
+  domain: { actions, validate, preview, run, context },
+  human:  { decide: async (suggestion) => ({ accept: true }), answer: async (ask) => '…' },
+  onEvent, timeoutMs: 90000, maxTurns: 8,
+});
+const { status, turns, outcomes } = await conversation.say(text);   // status: idle | no-reply | turn-limit
+
+### Each turn sends: [outcomes of the last turn] + domain.context() + the person's words
+### Reply handling
+dial-inform / dial-acknowledge → 'inform' event
+dial-ask     → human.answer(ask); the answer goes on the next turn ('' / null = no answer, no turn)
+dial-suggest → a suggestion; payload = its own <dial-payload>, else the <dial-declare> right after it
+
+### Suggestion outcomes (exactly one each)
+invalid     unknown action, or domain.validate refused the payload — never shown to the person (code, field, hint)
+done        ran (result)            failed   run threw (error, code?, field?, hint?)
+dismissed   the person declined     superseded  the person wrote something else instead
+handed-off  an action with handoff: true — another part of the surface owns it
+Read-only actions (mutates: false) and hand-offs run without asking; the rest call human.decide(suggestion)
+→ { accept: true } | { dismiss: true } | { edit: payload } | { say: text }
+Only done / failed / invalid start the next turn. dismissed / superseded / handed-off go with the person's next words.
+Undelivered outcomes and in-turn words (send failed, or no reply) are kept for the next say(); say('') sends only those.
+
+### Outcome reply (built by outcomeReply(outcomes))
+<dial>
+  <dial-acknowledge of="ID" yield="ID:STATUS">short text</dial-acknowledge>
+  <dial-declare context-key="outcome:ID"><dial-payload type="application/json">{"action":"…","status":"STATUS",…}</dial-payload></dial-declare>
+</dial>
+
+### Domain
+{ actions: { name: { mutates, destructive?, handoff? } },
+  validate(action, payload) → { ok: true } | { ok: false, code, field?, hint },
+  preview(action, payload) → short human text,  run(action, payload) → result (throw to fail),  context() → string }

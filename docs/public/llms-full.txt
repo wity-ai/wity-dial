@@ -62,6 +62,10 @@ A proposal. Non-blocking — exchange continues regardless of selection.
   <dial-payload type="application/json">[...]</dial-payload>
 </dial-suggest>
 
+Text content (outside any <dial-payload>) is optional: the human-readable proposal a receiver shows when asking
+whether to take the action, e.g. <dial-suggest action="add-card">Add a Methodology card?</dial-suggest>.
+Parsed as text, alongside payload.
+
 ## <dial-execute>
 An imperative. Executes a step graph. Contains WUCE-style steps with observe/yield.
 Steps carry raw executable commands — no translation layer, no abstract action types.
@@ -360,7 +364,7 @@ interface DialElementNode {
   options?:      DialOption[];
   // dial-execute
   steps?:       DialStepNode[];
-  // dial-suggest
+  // dial-suggest (its `text` is the human-readable proposal)
   action?:      string;
   // dial-declare
   contextKey?:  string;          // XML: context-key → JS: contextKey (camelCase)
@@ -427,3 +431,112 @@ import { KnowledgeStore, FileAdapter } from '@wity/dial-knowledge';
 
 Provides cross-session persistence of declared context and execution results.
 Separate concern from the protocol layer — not included in @wity.ai/dial.
+
+---
+
+## 3. CONSUMER RUNTIME — @wity.ai/dial-runtime
+
+In this repository: packages/dial-runtime. Not yet published to the public npm registry. Depends on @wity.ai/dial.
+Runs one conversation with an agent that speaks DIAL: the turn loop, and the life of each proposal the agent makes
+(validated, shown readable, accepted / dismissed / edited by a person, run, reported back). Domain-agnostic: a
+domain supplies the actions; a surface (terminal, chat panel, test) shows the conversation and plays the person.
+Adds nothing to the DIAL schema.
+
+### Usage
+
+import { Conversation, NoReplyError, outcomeReply, policyHuman, scriptedHuman } from '@wity.ai/dial-runtime';
+
+const conversation = new Conversation({
+  agent:  { send: async (message) => replyText },
+  domain: { actions, validate, preview, run, context },
+  human:  { decide: async (suggestion) => ({ accept: true }), answer: async (ask) => 'yes' },
+  onEvent: (event) => {},        // optional
+  timeoutMs: 90000,              // default — how long the agent may take to reply
+  maxTurns: 8,                   // default — turns one say() may use
+});
+
+const { status, turns, outcomes } = await conversation.say('add a note: buy milk');
+  status 'idle'       — the last reply needed nothing back
+  status 'no-reply'   — the agent did not answer within timeoutMs
+  status 'turn-limit' — maxTurns were used
+If agent.send rejects for another reason, say() rejects with that error.
+
+### One turn
+
+Sent, in order: the outcomes of the previous turn (if any) · domain.context() · the person's words.
+The reply is parsed; its elements are handled in order:
+  <dial-inform>, <dial-acknowledge> → event 'inform' (act: 'inform' | 'acknowledge')
+  <dial-ask>                        → event 'ask', then human.answer(ask); the answer goes on the next turn.
+                                      An empty answer means the question stands: no turn follows.
+  <dial-suggest>                    → a suggestion (below)
+A reply with no <dial> envelope is emitted as 'inform' text; so is prose outside the envelope.
+A suggestion's payload is the <dial-suggest>'s own <dial-payload>; if it has none, the <dial-declare> that
+immediately follows it is taken as its payload.
+
+### The life of a suggestion — every one ends in exactly one outcome
+
+  unknown action / payload refused by domain.validate → invalid   (the person never sees it; carries code, field, hint)
+  read-only action (mutates: false)                    → runs at once → done | failed
+  hand-off action (handoff: true)                      → runs at once → handed-off
+  otherwise human.decide(suggestion):
+      { accept: true }   → runs → done | failed
+      { edit: payload }  → validated (a refused edit is shown back as suggestion.issue and decided again;
+                           after three refused edits → invalid), then runs → done | failed (edited: true)
+      { dismiss: true }  → dismissed
+      { say: text }      → superseded — this and the reply's remaining suggestions; the words go with the next turn
+
+Only done / failed / invalid make a turn follow at once. dismissed / superseded / handed-off are reported with the
+person's next words — a dismissal alone starts no turn.
+What the agent was not told (a send failed, or no reply) is kept and goes with the next say(): the outcomes, and
+words the person gave inside the conversation. say('') sends just what is owed.
+
+A suggestion's id is the <dial-suggest>'s id when given, otherwise sg-1, sg-2, …
+
+### Outcome replies — outcomeReply(outcomes)
+
+<dial>
+  <dial-acknowledge of="sg-3" yield="sg-3:failed">Couldn't do it: Add 'Brand' to Strengths.</dial-acknowledge>
+  <dial-declare context-key="outcome:sg-3">
+    <dial-payload type="application/json">{"action":"matrix.entry.add","status":"failed","error":"…","hint":"…"}</dial-payload>
+  </dial-declare>
+</dial>
+
+Statuses: done · failed · invalid · dismissed · superseded · handed-off
+Payload: action, status, and by status — result (what the action returned), error, code, field, hint, edited.
+
+### Domain
+
+{
+  actions:  { 'add-note': { mutates: true }, 'remove-note': { mutates: true, destructive: true },
+              'list-notes': { mutates: false }, 'open-poll': { mutates: false, handoff: true } },
+  validate: (action, payload) => ({ ok: true }) | ({ ok: false, code, field?, hint }),
+  preview:  (action, payload) => "Add the note 'buy milk'",   // what the person is shown; falls back to the action name
+  run:      (action, payload) => result,                       // may be async; a thrown error → failed (message, code?, field?, hint?)
+  context:  () => string,                                      // sent with every turn, or ''
+}
+
+### Human
+
+{ decide: async (suggestion) => { accept: true } | { dismiss: true } | { edit: payload } | { say: text },
+  answer: async (ask) => string }                              // '' or null = no answer
+
+suggestion: { id, action, text, payload, preview, destructive } (+ issue after a refused edit) — text is the
+agent's own wording from the <dial-suggest>.   ask: { text, responseType, options }
+
+policyHuman('accept' | 'dismiss', { answerWith })  — the same decision every time
+scriptedHuman(['accept', 'dismiss', { edit: {…} }, { say: '…' }, { answer: '…' }])  — in order
+
+### Events — onEvent(event)
+
+  sent        { turn, message }
+  reply       { turn, text }
+  inform      { text, act? }
+  ask         { text, responseType, options }
+  suggestion  { id, action, text, payload, preview, destructive, mutates }   — valid suggestions only
+  outcome     { id, action, status, preview, …the outcome's fields }
+  no-reply    { turn, error }
+  turn-limit  { turns }
+
+### Environments
+Runs wherever @wity.ai/dial's parser does: parse() is synchronous in Node.js and returns a Promise in the browser;
+the runtime awaits both.
