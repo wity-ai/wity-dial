@@ -1,7 +1,17 @@
 # DIAL consumer runtime — driving domain actions with a human in the loop
 
 Date: 2026-10-09
-Status: **design, for review.** Nothing here is built yet. Nothing in it changes the DIAL spec or `DialRouter`.
+Status: **built** — steps 1–3 of §8 (the runtime, the CLI, wity-app's panel); step 4 (a second domain) is open.
+Sections 1–7 are the design as written before building, kept as the record; where they differ from what was built:
+- the CLI command is `wity open <board>` (with `--rehearse` / `--blank <application>` and `wity check <suite>`),
+  not `wity sage`;
+- wity-app's `dial-handlers.js` and `chat-context.js` no longer exist — the board snapshot is built in
+  wity-authoring, and the panel uses the runtime;
+- the domain is `boardDomain(authoring, application, live, options)` from `@wity-ai/authoring` (one function for
+  every kind of board; earlier names `thoughtbookDomain` / `modelDomain` are gone);
+- packages are published on packages.wity.ai as `@wity-ai/dial` (0.2.0) and `@wity-ai/dial-runtime` (0.3.1);
+- later runtime behaviour is listed under §8.
+Nothing in it changes the DIAL spec or `DialRouter`.
 Follows [dial-and-mcp.md](./dial-and-mcp.md): MCP (and our command registries) are the capabilities — the limbs;
 DIAL is the discourse — the language. This note is the piece between them: how a consumer uses DIAL to propose and
 run domain actions, with a person deciding, the same way on every surface.
@@ -178,6 +188,10 @@ Implementations:
 
 ## 8. Plan
 
+**Status (2026-10-10):** also in the runtime since — a question nobody answers ends the turn (no empty message,
+0.3.1). The CLI gained rehearsal (the real assistant on an in-memory copy, any kind of board) and `wity check sage`
+(6 scenarios, pass / fail with turns and credits).
+
 **Status (2026-10-09, later):** steps 1–2 done; step 3 (wity-app's chat panel on the runtime) built. Decided while
 building it, all in the runtime (so the CLI behaves the same):
 - **A dismissal starts no turn.** `dismissed`, `superseded` and `handed-off` outcomes go with the person's next
@@ -189,7 +203,7 @@ building it, all in the runtime (so the CLI behaves the same):
   proposal another part of the surface owns (wity-app: a decision suggestion goes to the Decisions panel).
 - **Runs in a browser:** the parser's browser build is asynchronous; the runtime awaits it.
 - `inform` events say whether they were an acknowledgement (`act`).
-- Standalone boards (system map, workbook, matrix) are domains too: `modelDomain` in wity-authoring — the same
+- Standalone boards (system map, workbook, matrix) are domains too: `boardDomain` in wity-authoring — the same
   commands as their embedded form, without the embed address. The board snapshot is built in wity-authoring for
   every kind of board, so app and CLI send the same one.
 
