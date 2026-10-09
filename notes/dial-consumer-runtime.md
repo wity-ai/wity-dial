@@ -178,6 +178,21 @@ Implementations:
 
 ## 8. Plan
 
+**Status (2026-10-09, later):** steps 1–2 done; step 3 (wity-app's chat panel on the runtime) built. Decided while
+building it, all in the runtime (so the CLI behaves the same):
+- **A dismissal starts no turn.** `dismissed`, `superseded` and `handed-off` outcomes go with the person's next
+  words; only `done` / `failed` / `invalid` make the agent answer now. (Before: a dismiss cost a turn.)
+- **Nothing owed is lost.** Outcomes — and words the person gave inside a turn (an answer to an ask, or what they
+  wrote instead of deciding) — that never reached the agent (the send failed, or no reply) are kept and go with
+  the next `say`; `say('')` sends just those.
+- **Hand-off actions** (`handoff: true` on a domain action): run at once, ask nobody, outcome `handed-off` — for a
+  proposal another part of the surface owns (wity-app: a decision suggestion goes to the Decisions panel).
+- **Runs in a browser:** the parser's browser build is asynchronous; the runtime awaits it.
+- `inform` events say whether they were an acknowledgement (`act`).
+- Standalone boards (system map, workbook, matrix) are domains too: `modelDomain` in wity-authoring — the same
+  commands as their embedded form, without the embed address. The board snapshot is built in wity-authoring for
+  every kind of board, so app and CLI send the same one.
+
 **Status (2026-10-09):** step 1 built, uncommitted at the time of writing.
 - `packages/dial-runtime` (`@wity.ai/dial-runtime`, private, in this workspace): `Conversation` (the turn loop and
   lifecycle above), `outcomeReply`, and test humans (`policyHuman`, `scriptedHuman`). 12 model-free tests cover

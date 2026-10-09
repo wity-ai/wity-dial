@@ -89,12 +89,26 @@ test('read-only actions run without asking; failures carry the error, code and h
     ]);
 });
 
-test('dismissed → nothing runs, the agent is told', async () => {
+test('dismissed → nothing runs and no turn is spent; the agent is told with the next thing the person says', async () => {
     const domain = notesDomain();
     const agent = scriptedAgent([dial(suggest('add-note', { text: 'a' })), dial('<dial-inform>ok, skipped</dial-inform>')]);
-    await new Conversation({ agent, domain, human: policyHuman('dismiss') }).say('x');
+    const conversation = new Conversation({ agent, domain, human: policyHuman('dismiss') });
+    const first = await conversation.say('x');
     assert.deepEqual(domain.notes, []);
+    assert.equal(first.status, 'idle');
+    assert.equal(agent.sent.length, 1);                              // the dismissal alone sent nothing
+    assert.deepEqual(first.outcomes.map((o) => o.status), ['dismissed']);
+    await conversation.say('something else');
     assert.deepEqual(outcomesIn(agent.sent[1]), [{ action: 'add-note', status: 'dismissed' }]);
+    assert.match(agent.sent[1], /something else/);
+});
+
+test('a dismissal next to an action that ran is reported in the same turn', async () => {
+    const domain = notesDomain();
+    const agent = scriptedAgent([dial(suggest('add-note', { text: 'a' }), suggest('add-note', { text: 'b' })), dial('<dial-acknowledge>ok</dial-acknowledge>')]);
+    await new Conversation({ agent, domain, human: scriptedHuman(['accept', 'dismiss']) }).say('x');
+    assert.deepEqual(domain.notes, ['a']);
+    assert.deepEqual(outcomesIn(agent.sent[1]).map((o) => o.status), ['done', 'dismissed']);
 });
 
 test('edit → the edited payload runs; an invalid edit is shown back to the human, who decides again', async () => {
@@ -155,4 +169,60 @@ test('outcome replies are valid DIAL the parser reads back', () => {
     assert.deepEqual(els[0].yield, ['sg-3:failed']);
     assert.deepEqual(els[1].payload, { action: 'a', status: 'failed', error: 'x </dial-payload> y', hint: 'h' });
     assert.throws(() => outcomeReply([{ id: 'x', action: 'a', status: 'weird' }]), /unknown status/);
+});
+
+test('an outcome the agent was never told (the send failed) goes with the next thing the person says', async () => {
+    const domain = notesDomain();
+    const sent = [];
+    let call = 0;
+    const agent = { async send(message) {
+        sent.push(message);
+        call++;
+        if (call === 1) return dial(suggest('add-note', { text: 'milk' }, 'Add milk?', 'sg-a'));
+        if (call === 2) throw new Error('send failed');
+        return dial('<dial-inform>ok</dial-inform>');
+    } };
+    const conversation = new Conversation({ agent, domain, human: policyHuman('accept') });
+    await assert.rejects(conversation.say('add milk'), /send failed/);
+    assert.deepEqual(domain.notes, ['milk']);                       // the action ran; only the report was lost
+    const result = await conversation.say('thanks');
+    assert.equal(result.status, 'idle');
+    assert.deepEqual(outcomesIn(sent[2]).map((o) => o.status), ['done']);
+    assert.match(sent[2], /thanks/);
+    await conversation.say('one more');
+    assert.deepEqual(outcomesIn(sent[3]), []);                      // told once
+});
+
+test('a hand-off action runs at once, asks nobody, and spends no turn; the agent hears of it with the next words', async () => {
+    const taken = [];
+    const domain = { ...notesDomain(), actions: { 'suggest-poll': { mutates: false, handoff: true } }, validate: () => ({ ok: true }), preview: () => 'Open a poll', run: (a, p) => { taken.push(p); } };
+    const agent = scriptedAgent([dial(suggest('suggest-poll', { question: 'Lunch?' })), dial('<dial-inform>ok</dial-inform>')]);
+    const human = scriptedHuman([]);                                  // would throw if asked
+    const conversation = new Conversation({ agent, domain, human });
+    const first = await conversation.say('poll please');
+    assert.deepEqual(taken, [{ question: 'Lunch?' }]);
+    assert.deepEqual(first.outcomes.map((o) => o.status), ['handed-off']);
+    assert.equal(agent.sent.length, 1);
+    await conversation.say('thanks');
+    assert.deepEqual(outcomesIn(agent.sent[1]).map((o) => o.status), ['handed-off']);
+});
+
+test('an answer the agent never received (the send failed) is not lost: it goes with the next send', async () => {
+    const domain = notesDomain();
+    const sent = [];
+    let call = 0;
+    const agent = { async send(message) {
+        sent.push(message);
+        call++;
+        if (call === 1) return dial('<dial-ask>Which note?</dial-ask>');
+        if (call === 2) throw new Error('send failed');
+        return dial('<dial-inform>ok</dial-inform>');
+    } };
+    const human = { decide: async () => ({ dismiss: true }), answer: async () => 'the first one' };
+    const conversation = new Conversation({ agent, domain, human });
+    await assert.rejects(conversation.say('remove a note'), /send failed/);
+    await conversation.say('');                                     // "resend": nothing new to say
+    assert.match(sent[2], /the first one\s*$/);
+    await conversation.say('thanks');
+    assert.doesNotMatch(sent[3], /the first one/);                  // sent once
 });

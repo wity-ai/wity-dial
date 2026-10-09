@@ -10,7 +10,7 @@
  *   </dial>
  */
 
-export const OUTCOME_STATUSES = ['done', 'failed', 'invalid', 'dismissed', 'superseded'];
+export const OUTCOME_STATUSES = ['done', 'failed', 'invalid', 'dismissed', 'superseded', 'handed-off'];
 
 const ACK_TEXT = {
     done: (o) => `Done: ${o.preview || o.action}.`,
@@ -18,6 +18,7 @@ const ACK_TEXT = {
     invalid: (o) => `Not proposed to the user — the payload for ${o.action} is invalid.`,
     dismissed: (o) => `The user dismissed: ${o.preview || o.action}.`,
     superseded: (o) => `The user moved on without deciding: ${o.preview || o.action}.`,
+    'handed-off': (o) => `Passed to the user in its own panel: ${o.preview || o.action}.`,
 };
 
 const escapeText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

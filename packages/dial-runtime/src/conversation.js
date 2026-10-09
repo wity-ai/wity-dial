@@ -9,19 +9,27 @@
  *   dial-suggest (+ its declare)     → a suggestion:
  *        unknown action / invalid payload → outcome 'invalid', never shown to the human
  *        read-only action                 → run at once → 'done' (with its result) or 'failed'
+ *        hand-off action                  → run at once → 'handed-off': another part of the surface takes the
+ *                                           proposal over (its own form, its own accept); the agent is told with
+ *                                           the person's next words, like a dismissal
  *        otherwise the human decides:
  *          accept  → run → 'done' / 'failed'
  *          edit    → the edited payload is validated (the human sees why if not) and run
- *          dismiss → 'dismissed'
+ *          dismiss → 'dismissed' (reported with the person's next words — a dismissal alone starts no turn)
  *          say     → the person wrote something else: this and the reply's remaining suggestions are
  *                    'superseded', and the new words go with the next turn
  *
  * Every suggestion ends in exactly one outcome, and the agent is told it (see outcome.js). The loop continues while
  * there is something to tell the agent, and stops when a reply needs nothing back, when the agent doesn't answer
- * in time ('no-reply'), or after maxTurns ('turn-limit').
+ * in time ('no-reply'), or after maxTurns ('turn-limit'). What the agent wasn't told — the send failed, or it
+ * didn't answer — is kept and goes with the next thing the person says: the outcomes, and words the person gave
+ * inside the conversation (an answer to its question, or what they wrote instead of deciding). say('') sends just that.
+ *
+ * Runs wherever the parser does: in Node its parse() is synchronous, in a browser it returns a promise (the
+ * WebAssembly loads on first use) — both are awaited.
  *
  * Domain — the vocabulary this conversation acts on:
- *   actions:  { [name]: { mutates: boolean, destructive?: boolean } }
+ *   actions:  { [name]: { mutates: boolean, destructive?: boolean, handoff?: boolean } }
  *   validate(action, payload) → { ok: true } | { ok: false, code, field?, hint }
  *   preview(action, payload)  → short human text, e.g. "Add 'Strong brand' to Strengths"
  *   run(action, payload)      → result (may be async); throws on failure — { message, code?, field?, hint? }
@@ -40,11 +48,13 @@ export class Conversation {
     #agent; #domain; #human; #onEvent; #timeoutMs; #maxTurns;
     #count = 0;
     #pendingText = null;                 // words the person wrote while a suggestion was pending
+    #undelivered = [];                   // outcomes the agent hasn't been told yet (a send failed / no reply)
+    #unsentWords = null;                 // the person's words from inside a turn that never reached the agent
 
     /**
      * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns? }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
-     *     sent · reply · inform · ask · suggestion · outcome · no-reply · turn-limit
+     *     sent · reply · inform (act: 'inform' | 'acknowledge') · ask · suggestion · outcome · no-reply · turn-limit
      */
     constructor({ agent, domain, human, onEvent = () => {}, timeoutMs = 90_000, maxTurns = 8 }) {
         for (const [name, value, method] of [['agent', agent, 'send'], ['human', human, 'decide'], ['domain', domain, 'run']]) {
@@ -60,10 +70,15 @@ export class Conversation {
      */
     async say(text) {
         const allOutcomes = [];
-        let words = text;
-        let outcomes = [];
+        let words = [this.#unsentWords, text].filter((w) => w !== null && w !== undefined && w !== '').join('\n\n');
+        let outcomes = this.#undelivered;
+        this.#undelivered = [];
+        this.#unsentWords = null;
+        // what this turn owes the agent stays owed if it can't be delivered (the first turn's words are the caller's)
+        const keep = (turn) => { this.#undelivered = outcomes; if (turn > 1) this.#unsentWords = words; };
         for (let turn = 1; ; turn++) {
             if (turn > this.#maxTurns) {
+                keep(turn);
                 this.#onEvent({ type: 'turn-limit', turns: this.#maxTurns });
                 return { status: 'turn-limit', turns: this.#maxTurns, outcomes: allOutcomes };
             }
@@ -73,6 +88,7 @@ export class Conversation {
             try {
                 reply = await this.#send(message);
             } catch (e) {
+                keep(turn);
                 if (!(e instanceof NoReplyError)) throw e;
                 this.#onEvent({ type: 'no-reply', turn, error: e.message });
                 return { status: 'no-reply', turns: turn, outcomes: allOutcomes };
@@ -84,7 +100,12 @@ export class Conversation {
             outcomes = next;
             words = this.#pendingText ?? answer ?? null;
             this.#pendingText = null;
-            if (!outcomes.length && words === null) return { status: 'idle', turns: turn, outcomes: allOutcomes };
+            // a turn follows only when there is something the agent should react to now: the person's words, or an
+            // action that ran / couldn't. A dismissal alone waits — it goes with the next thing the person says.
+            if (words === null && !outcomes.some(needsReply)) {
+                this.#undelivered = outcomes;
+                return { status: 'idle', turns: turn, outcomes: allOutcomes };
+            }
         }
     }
 
@@ -106,13 +127,13 @@ export class Conversation {
 
     // One reply's elements, in order → the outcomes to report and an ask's answer (if any)
     async #handle(reply) {
-        const envelope = parse(reply);
+        const envelope = await parse(reply);
         if (!envelope) {
             const text = String(reply ?? '').trim();
             if (text) this.#onEvent({ type: 'inform', text });
             return { outcomes: [] };
         }
-        const prose = extractProse(reply)?.trim();
+        const prose = (await extractProse(reply))?.trim();
         if (prose) this.#onEvent({ type: 'inform', text: prose });
 
         const outcomes = [];
@@ -121,7 +142,7 @@ export class Conversation {
         for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
             if (el.type === 'dial-inform' || el.type === 'dial-acknowledge') {
-                if (el.text) this.#onEvent({ type: 'inform', text: el.text });
+                if (el.text) this.#onEvent({ type: 'inform', text: el.text, act: el.type === 'dial-acknowledge' ? 'acknowledge' : 'inform' });
             } else if (el.type === 'dial-ask') {
                 const ask = { text: el.text ?? '', responseType: el.responseType, options: el.options ?? [] };
                 this.#onEvent({ type: 'ask', ...ask });
@@ -159,6 +180,7 @@ export class Conversation {
         suggestion.preview = this.#preview(action, payload);
         this.#onEvent({ type: 'suggestion', ...suggestion, mutates: spec.mutates });
 
+        if (spec.handoff) return this.#run(action, payload, outcome, {}, 'handed-off');
         if (!spec.mutates) return this.#run(action, payload, outcome);
 
         let current = payload;
@@ -183,10 +205,10 @@ export class Conversation {
         }
     }
 
-    async #run(action, payload, outcome, extra = {}) {
+    async #run(action, payload, outcome, extra = {}, status = 'done') {
         try {
             const result = await this.#domain.run(action, payload);
-            return outcome('done', { result, ...extra });
+            return outcome(status, { ...(result !== undefined ? { result } : {}), ...extra });
         } catch (e) {
             return outcome('failed', { error: e?.message ?? String(e), ...pick(e, ['code', 'field', 'hint']), ...extra });
         }
@@ -204,5 +226,7 @@ function readPayload(declare) {
     try { return JSON.parse(text); } catch { return undefined; }
 }
 
+// what the agent should react to now — the rest (dismissed, superseded, handed-off) waits for the person's next words
+const needsReply = (outcome) => ['done', 'failed', 'invalid'].includes(outcome.status);
 const issue = (check) => pick(check, ['code', 'field', 'hint']);
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undefined).map((k) => [k, o[k]]));
