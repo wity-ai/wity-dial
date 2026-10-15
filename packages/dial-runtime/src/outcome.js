@@ -15,7 +15,9 @@ export const OUTCOME_STATUSES = ['done', 'failed', 'invalid', 'dismissed', 'supe
 const ACK_TEXT = {
     done: (o) => `Done: ${o.preview || o.action}.`,
     failed: (o) => `Couldn't do it: ${o.preview || o.action}.`,
-    invalid: (o) => `Not proposed to the user — the payload for ${o.action} is invalid.`,
+    invalid: (o) => (o.code === 'unknown-action'
+        ? `Not proposed to the user — there is no action ${o.action} here.`
+        : `Not proposed to the user — the payload for ${o.action} is invalid.`),
     dismissed: (o) => `The user dismissed: ${o.preview || o.action}.`,
     superseded: (o) => `The user moved on without deciding: ${o.preview || o.action}.`,
     'handed-off': (o) => `Passed to the user in its own panel: ${o.preview || o.action}.`,

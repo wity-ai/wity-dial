@@ -233,3 +233,9 @@ test('a question nobody answers ends the turn — no empty message is sent', asy
     assert.equal(result.status, 'idle');
     assert.equal(agent.sent.length, 1);
 });
+
+test('an action there is not is reported as such — not as an invalid payload', () => {
+    const text = outcomeReply([{ id: 'sg-1', action: 'generate-image', status: 'invalid', code: 'unknown-action', hint: "There is no action 'generate-image'." }]);
+    assert.match(text, /Not proposed to the user — there is no action generate-image here\./);
+    assert.match(outcomeReply([{ id: 'sg-2', action: 'add-note', status: 'invalid', code: 'invalid-payload' }]), /the payload for add-note is invalid/);
+});
