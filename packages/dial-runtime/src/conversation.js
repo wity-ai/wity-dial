@@ -66,9 +66,12 @@ export class Conversation {
 
     /**
      * The person says something; runs turns until the agent needs nothing back.
+     * @param {string} text
+     * @param {{ maxTurns?: number }} [o]  this message's turn limit, when it is not the conversation's (an agent whose
+     *                                     domain changed — it can act now, or no longer can)
      * @returns {Promise<{ status: 'idle' | 'no-reply' | 'turn-limit', turns: number, outcomes: object[] }>}
      */
-    async say(text) {
+    async say(text, { maxTurns = this.#maxTurns } = {}) {
         const allOutcomes = [];
         let words = [this.#unsentWords, text].filter((w) => w !== null && w !== undefined && w !== '').join('\n\n');
         let outcomes = this.#undelivered;
@@ -77,10 +80,10 @@ export class Conversation {
         // what this turn owes the agent stays owed if it can't be delivered (the first turn's words are the caller's)
         const keep = (turn) => { this.#undelivered = outcomes; if (turn > 1) this.#unsentWords = words; };
         for (let turn = 1; ; turn++) {
-            if (turn > this.#maxTurns) {
+            if (turn > maxTurns) {
                 keep(turn);
-                this.#onEvent({ type: 'turn-limit', turns: this.#maxTurns });
-                return { status: 'turn-limit', turns: this.#maxTurns, outcomes: allOutcomes };
+                this.#onEvent({ type: 'turn-limit', turns: maxTurns });
+                return { status: 'turn-limit', turns: maxTurns, outcomes: allOutcomes };
             }
             const message = this.#compose(outcomes, words);
             this.#onEvent({ type: 'sent', turn, message });

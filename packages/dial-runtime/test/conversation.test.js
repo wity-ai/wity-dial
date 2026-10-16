@@ -156,6 +156,15 @@ test('an agent that keeps proposing stops at maxTurns', async () => {
     assert.equal(r.status, 'turn-limit'); assert.equal(r.outcomes.length, 3);
 });
 
+test('a message can carry its own turn limit — the next one is back to the conversation\'s', async () => {
+    const replies = Array.from({ length: 20 }, () => dial(suggest('list-notes', {})));
+    const c = new Conversation({ agent: scriptedAgent(replies), domain: notesDomain(), human: policyHuman(), maxTurns: 5 });
+    const once = await c.say('loop', { maxTurns: 2 });
+    assert.deepEqual([once.status, once.turns], ['turn-limit', 2]);
+    const after = await c.say('loop');
+    assert.deepEqual([after.status, after.turns], ['turn-limit', 5]);
+});
+
 test('a plain-text reply is shown and ends the turn', async () => {
     const events = [];
     const r = await new Conversation({ agent: scriptedAgent(['Just text.']), domain: notesDomain(), human: policyHuman(), onEvent: (e) => events.push(e) }).say('hi');
