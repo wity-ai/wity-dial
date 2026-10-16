@@ -8,6 +8,13 @@
  */
 import { OUTCOME_STATUSES } from './outcome.js';
 
+const ENVELOPE = `DIAL — every response is one <dial>…</dial> envelope, never text outside it:
+  <dial-inform>             say something: an answer, an idea, content they asked for, why you propose what follows
+  <dial-ask>                ask one question
+  <dial-acknowledge>        confirm briefly that something was done
+  <dial-suggest> + <dial-declare>   propose one action (PATTERN below)
+  Deliver what you say you will in the same response — never only announce it ("Let me…", "I'll…").`;
+
 const CONDUCT = `CONDUCT — how you work with the person:
   - Talk an idea through before proposing anything. When they ask for help with an idea, or what they want is not
     settled yet (what it is for, who it is for, its tone, its form), answer in words and ask — one question at a
@@ -17,6 +24,7 @@ const CONDUCT = `CONDUCT — how you work with the person:
     making it costs the person credits.
   - One action per response. When its outcome comes back, propose the next step of what was agreed; each one is
     confirmed by the person.
+  - Before an action that removes something, say in a dial-inform what will be lost.
   - Only the actions listed here can be proposed. One the context says is not available here cannot be done on this
     surface: say so, and where it can be done.`;
 
@@ -42,7 +50,7 @@ const wrap = (text, indent, width = 118) => {
  * @param {object} [o]
  * @param {{ action: string, question: string, payload: string }} [o.example]  one proposal in this domain
  * @param {string} [o.batching]  what "one action can hold many items" means in this domain
- * @returns {string} CONDUCT, PATTERN and OUTCOMES
+ * @returns {string} DIAL (the envelope and its elements), CONDUCT, PATTERN and OUTCOMES
  */
 export function renderProtocol({ example, batching } = {}) {
     const missing = OUTCOME_STATUSES.filter((s) => !MEANING[s]);
@@ -61,5 +69,5 @@ context, or from an outcome.`;
   <dial-declare context-key="outcome:ID">{"status":"STATUS","action":"<action>", …}</dial-declare>
 ${OUTCOME_STATUSES.map((s) => `  ${s.padEnd(11)} ${wrap(MEANING[s], 14)}`).join('\n')}
 A ${later.join(' / ')} outcome arrives together with the user's next message.`;
-    return `${CONDUCT}\n\n${pattern}\n\n${outcomes}\n`;
+    return `${ENVELOPE}\n\n${CONDUCT}\n\n${pattern}\n\n${outcomes}\n`;
 }

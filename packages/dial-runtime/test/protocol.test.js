@@ -28,3 +28,10 @@ test('no line is wider than 118 characters', () => {
     const text = renderProtocol({ example: { action: 'card.add', question: 'Add a card?', payload: '{}' }, batching: 'building a system map, add all its assets with ONE system.assets.add and all its connections with ONE system.connections.add — never one at a time' });
     for (const line of text.split('\n')) assert.ok(line.length <= 118, `${line.length}: ${line}`);
 });
+
+test('the envelope and its elements; what a removal loses is said first', () => {
+    const text = renderProtocol();
+    assert.match(text, /^DIAL — every response is one <dial>…<\/dial> envelope/);
+    for (const el of ['dial-inform', 'dial-ask', 'dial-acknowledge', 'dial-suggest']) assert.ok(text.includes(`<${el}>`), el);
+    assert.match(text, /removes something, say in a dial-inform what will be lost/);
+});
