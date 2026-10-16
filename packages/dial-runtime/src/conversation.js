@@ -31,7 +31,7 @@
  * Domain — the vocabulary this conversation acts on:
  *   actions:  { [name]: { mutates: boolean, destructive?: boolean, handoff?: boolean } }
  *   validate(action, payload) → { ok: true } | { ok: false, code, field?, hint }
- *   preview(action, payload)  → short human text, e.g. "Add 'Strong brand' to Strengths"
+ *   preview(action, payload)  → short human text, e.g. "Add 'Strong brand' to Strengths" — or a promise of it
  *   run(action, payload)      → result (may be async); throws on failure — { message, code?, field?, hint? }
  *   context()                 → text sent with every turn (e.g. a board snapshot), or ''
  */
@@ -180,11 +180,11 @@ export class Conversation {
 
         if (!spec) return outcome('invalid', { code: 'unknown-action', hint: `There is no action '${action}'.` });
         // the person already moved on (wrote something while an earlier suggestion of this reply was pending)
-        if (this.#pendingText !== null) { suggestion.preview = this.#preview(action, payload); return outcome('superseded'); }
+        if (this.#pendingText !== null) { suggestion.preview = await this.#preview(action, payload); return outcome('superseded'); }
 
         const check = this.#domain.validate(action, payload);
         if (!check.ok) return outcome('invalid', issue(check));
-        suggestion.preview = this.#preview(action, payload);
+        suggestion.preview = await this.#preview(action, payload);
         this.#onEvent({ type: 'suggestion', ...suggestion, mutates: spec.mutates });
 
         if (spec.handoff) return this.#run(action, payload, outcome, {}, 'handed-off');
@@ -204,7 +204,7 @@ export class Conversation {
                     continue;
                 }
                 current = decision.edit;
-                suggestion.preview = this.#preview(action, current);
+                suggestion.preview = await this.#preview(action, current);
                 return this.#run(action, current, outcome, { edited: true });
             }
             if (decision?.accept) return this.#run(action, current, outcome);
@@ -221,8 +221,9 @@ export class Conversation {
         }
     }
 
-    #preview(action, payload) {
-        try { return this.#domain.preview?.(action, payload) || action; } catch { return action; }
+    // a preview may be a promise — what it costs, asked of the service that makes it; one that fails reads as the action
+    async #preview(action, payload) {
+        try { return (await this.#domain.preview?.(action, payload)) || action; } catch { return action; }
     }
 }
 

@@ -248,3 +248,15 @@ test('an action there is not is reported as such — not as an invalid payload',
     assert.match(text, /Not proposed to the user — there is no action generate-image here\./);
     assert.match(outcomeReply([{ id: 'sg-2', action: 'add-note', status: 'invalid', code: 'invalid-payload' }]), /the payload for add-note is invalid/);
 });
+
+test('a preview may be a promise — the human sees what it resolves to; one that fails reads as the action', async () => {
+    const seen = [];
+    const base = notesDomain();
+    for (const preview of [async () => 'Add a note · 25 credits', async () => { throw new Error('quote down'); }]) {
+        const domain = { ...base, preview };
+        const agent = scriptedAgent(['<dial><dial-suggest action="add-note">Add?</dial-suggest><dial-declare context-key="addNoteSuggestion">{"text":"x"}</dial-declare></dial>', '<dial><dial-inform>ok</dial-inform></dial>']);
+        const conv = new Conversation({ agent, domain, human: { decide: async (s) => { seen.push(s.preview); return { dismiss: true }; } } });
+        await conv.say('go');
+    }
+    assert.deepEqual(seen, ['Add a note · 25 credits', 'add-note']);
+});
