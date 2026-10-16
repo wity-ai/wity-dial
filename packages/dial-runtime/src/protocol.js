@@ -48,7 +48,7 @@ export function renderProtocol({ example, batching } = {}) {
     const missing = OUTCOME_STATUSES.filter((s) => !MEANING[s]);
     if (missing.length) throw new Error(`renderProtocol: no meaning for outcome status ${missing.join(', ')}`);
     const camel = (name) => name.split(/[.-]/).map((p, i) => (i ? p[0].toUpperCase() + p.slice(1) : p)).join('');
-    const pattern = `PATTERN — one action per response (one action can hold many items${batching ? `: ${batching}` : ''}):
+    const pattern = `${wrap(`PATTERN — one action per response (one action can hold many items${batching ? `: ${batching}` : ''}):`, 0)}
   <dial-suggest action="<action>">Short human question?</dial-suggest>
   <dial-declare context-key="<actionCamel>Suggestion">{ JSON payload }</dial-declare>${example ? `
   e.g. <dial-suggest action="${example.action}">${example.question}</dial-suggest>

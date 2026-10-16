@@ -25,6 +25,6 @@ test("a domain's example and batching go into the pattern", () => {
 });
 
 test('no line is wider than 118 characters', () => {
-    const text = renderProtocol({ example: { action: 'card.add', question: 'Add a card?', payload: '{}' } });
+    const text = renderProtocol({ example: { action: 'card.add', question: 'Add a card?', payload: '{}' }, batching: 'building a system map, add all its assets with ONE system.assets.add and all its connections with ONE system.connections.add — never one at a time' });
     for (const line of text.split('\n')) assert.ok(line.length <= 118, `${line.length}: ${line}`);
 });
