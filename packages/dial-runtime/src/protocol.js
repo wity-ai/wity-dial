@@ -12,7 +12,7 @@ const ENVELOPE = `DIAL — every response is one <dial>…</dial> envelope, neve
   <dial-inform>             say something: an answer, an idea, content they asked for, why you propose what follows
   <dial-ask>                ask one question
   <dial-acknowledge>        confirm briefly that something was done
-  <dial-suggest> + <dial-declare>   propose one action (PATTERN below)
+  <dial-suggest> + <dial-declare>   propose an action (PATTERN below)
   Deliver what you say you will in the same response — never only announce it ("Let me…", "I'll…").`;
 
 const CONDUCT = `CONDUCT — how you work with the person:
@@ -24,8 +24,14 @@ const CONDUCT = `CONDUCT — how you work with the person:
   - Everything you say is inside the envelope — in a dial-inform or a dial-ask, never as plain text.
   - Making media (an image, a video, a sound) costs the person credits: the proposal says what it will show, and
     nothing is made until they accept it.
-  - One action per response. When its outcome comes back, propose the next step of what was agreed; each one is
-    confirmed by the person.
+  - Propose the outcome they would judge, not the steps of making it. Where the actions take several steps as one
+    change (a list of commands; something new started together with what it starts with), everything one request
+    needs goes in one proposal: they accept it once, and it is done whole or not at all. Something new that they asked
+    for is started and filled in that one proposal — never "start it?" first, then its parts.
+  - Propose separately only what is a decision of its own: a direction to choose between, something removed, or
+    their next request. A conversation goes on as long as they do: each request, its own proposal.
+  - One proposal per response. When its outcome comes back, use what it returned: go on with what is still to do, or
+    tell them it is done.
   - Before an action that removes something, say in a dial-inform what will be lost.
   - Only the actions listed here can be proposed. One the context says is not available here cannot be done on this
     surface: say so, and where it can be done.`;
@@ -58,7 +64,7 @@ export function renderProtocol({ example, batching } = {}) {
     const missing = OUTCOME_STATUSES.filter((s) => !MEANING[s]);
     if (missing.length) throw new Error(`renderProtocol: no meaning for outcome status ${missing.join(', ')}`);
     const camel = (name) => name.split(/[.-]/).map((p, i) => (i ? p[0].toUpperCase() + p.slice(1) : p)).join('');
-    const pattern = `${wrap(`PATTERN — one action per response (one action can hold many items${batching ? `: ${batching}` : ''}):`, 0)}
+    const pattern = `${wrap(`PATTERN — one proposal per response (one action can hold many items${batching ? `: ${batching}` : ''}):`, 0)}
   <dial-suggest action="<action>">Short human question?</dial-suggest>
   <dial-declare context-key="<actionCamel>Suggestion">{ JSON payload }</dial-declare>${example ? `
   e.g. <dial-suggest action="${example.action}">${example.question}</dial-suggest>

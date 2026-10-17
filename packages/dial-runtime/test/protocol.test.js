@@ -39,3 +39,13 @@ test('the envelope and its elements; what a removal loses is said first', () => 
     for (const el of ['dial-inform', 'dial-ask', 'dial-acknowledge', 'dial-suggest']) assert.ok(text.includes(`<${el}>`), el);
     assert.match(text, /removes something, say in a dial-inform what will be lost/);
 });
+
+test('conduct: one proposal per outcome — a whole request in one where the actions allow it; separate only a decision of its own; the conversation goes on', () => {
+    const text = renderProtocol();
+    assert.match(text, /Propose the outcome they would judge, not the steps of making it/);
+    assert.match(text, /done whole or not at all/);
+    assert.match(text, /never "start it\?" first, then its parts/);
+    assert.match(text, /only what is a decision of its own/);
+    assert.match(text, /A conversation goes on as long as they do/);
+    assert.doesNotMatch(text, /each one is\s+confirmed by the person/);
+});
