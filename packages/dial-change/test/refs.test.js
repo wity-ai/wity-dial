@@ -12,9 +12,9 @@ test('a step names what an earlier one made, or what was there before — and no
     resolveRefs({ a: { $ref: '1.layerId' } }, 2, results, before); assert.equal(read, 1, 'what was before is read only when named');
     assert.throws(() => resolveRefs({ $ref: '1.x' }, 1, [], before), /only an earlier step/);
     assert.throws(() => resolveRefs({ $ref: '1.nothing' }, 2, results, before), /step 1 has no nothing/);
-    assert.throws(() => resolveRefs({ $ref: 'first.id' }, 2, results, before), /starts with a step number/);
+    assert.throws(() => resolveRefs({ $ref: 'first.id' }, 2, results, before), /no step before this one is named 'first'/);
     assert.equal(resolveRefs({ $ref: '1.elementId', extra: 1 }.extra, 2, results, before), 1);
     assert.deepEqual(refsOf({ a: { $ref: '1.x' }, b: [{ $ref: '0.y' }] }), ['1.x', '0.y']);
     assert.equal(hasRefs({ a: '$ref 1.x' }), false, 'text is text'); assert.equal(isRef({ $ref: '1.x', other: 2 }), false);
-    assert.match(refsHelp('{ "$ref": "1.cardUid" } is the card step 1 added'), /^A step may use what an earlier one/);
+    assert.match(refsHelp('{ "$ref": "intro.cardUid" } is the card the step named intro added'), /^A step that makes something a later step works on is given a name/);
 });
