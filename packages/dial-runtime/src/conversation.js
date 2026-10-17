@@ -182,7 +182,7 @@ export class Conversation {
         // the person already moved on (wrote something while an earlier suggestion of this reply was pending)
         if (this.#pendingText !== null) { suggestion.preview = await this.#preview(action, payload); return outcome('superseded'); }
 
-        const check = this.#domain.validate(action, payload);
+        const check = await this.#domain.validate(action, payload);   // a domain may check where the work is kept
         if (!check.ok) return outcome('invalid', issue(check));
         suggestion.preview = await this.#preview(action, payload);
         this.#onEvent({ type: 'suggestion', ...suggestion, mutates: spec.mutates });
@@ -196,7 +196,7 @@ export class Conversation {
             if (decision?.dismiss) return outcome('dismissed');
             if (typeof decision?.say === 'string') { this.#pendingText = decision.say; return outcome('superseded'); }
             if (decision?.edit !== undefined) {
-                const edited = this.#domain.validate(action, decision.edit);
+                const edited = await this.#domain.validate(action, decision.edit);
                 if (!edited.ok) {
                     if (attempt + 1 >= MAX_EDIT_ATTEMPTS) return outcome('invalid', issue(edited));
                     suggestion.issue = issue(edited);              // the human sees why, and decides again

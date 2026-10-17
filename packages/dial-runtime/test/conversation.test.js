@@ -260,3 +260,18 @@ test('a preview may be a promise — the human sees what it resolves to; one tha
     }
     assert.deepEqual(seen, ['Add a note · 25 credits', 'add-note']);
 });
+
+test('a domain may validate asynchronously — checked where the work is kept — and what it refuses is never shown', async () => {
+    const shown = [];
+    const domain = {
+        actions: { 'x.do': { mutates: true } },
+        validate: async (a, p) => (p.ok ? { ok: true } : { ok: false, code: 'refused', hint: 'not on this scene' }),
+        preview: () => 'Do x', run: async () => ({ done: true }),
+    };
+    let n = 0;
+    const replies = ['<dial><dial-suggest action="x.do">?</dial-suggest><dial-declare context-key="xDoSuggestion">{"ok":false}</dial-declare></dial>',
+        '<dial><dial-suggest action="x.do">?</dial-suggest><dial-declare context-key="xDoSuggestion">{"ok":true}</dial-declare></dial>', '<dial><dial-inform>done</dial-inform></dial>'];
+    const c = new Conversation({ agent: { send: async () => replies[n++] }, domain, human: { decide: async (s) => { shown.push(s.payload); return { accept: true }; } } });
+    await c.say('go');
+    assert.deepEqual(shown, [{ ok: true }]);
+});
