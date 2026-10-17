@@ -9,10 +9,14 @@ test('every outcome status the runtime reports is described — and nothing else
     assert.match(text, /A dismissed \/ superseded \/ handed-off outcome arrives together/);
 });
 
-test('conduct: talk an idea through first; never make media on a guess; only listed actions', () => {
+test('conduct: a request to make something is proposed at once — what was left open chosen and named; thinking talked through; all inside the envelope; only listed actions', () => {
     const text = renderProtocol();
-    assert.match(text, /Talk an idea through before proposing anything/);
-    assert.match(text, /Never propose making media .* on a guess/s);
+    assert.match(text, /ask you to make or change something, propose it in the same response/);
+    assert.match(text, /What they left open .* you choose/s);
+    assert.match(text, /Ask first only when nothing sensible can be made/);
+    assert.match(text, /help thinking something through, talk it through/);
+    assert.match(text, /never as plain text/);
+    assert.match(text, /nothing is made until they accept it/);
     assert.match(text, /not available here cannot be done on this\s+surface/);
 });
 
