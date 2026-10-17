@@ -1,0 +1,11 @@
+{
+  "name": "@wity.ai/dial-change",
+  "version": "0.10.0",
+  "private": true,
+  "description": "Several actions as one change: how a step of the list names what an earlier one made ({ \"$ref\": \"<step>.<path>\" }) — resolved the same wherever a list is run or checked. Pure, no dependencies.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": { ".": "./index.js" },
+  "scripts": { "test": "node --test test/" },
+  "license": "MIT"
+}
