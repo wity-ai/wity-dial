@@ -49,3 +49,12 @@ test('conduct: one proposal per outcome — a whole request in one where the act
     assert.match(text, /A conversation goes on as long as they do/);
     assert.doesNotMatch(text, /each one is\s+confirmed by the person/);
 });
+
+test('a question about a proposal is answered and the proposal made again; words of agreement are proposed, not taken; never an action named to the person', async () => {
+    const { renderProtocol } = await import('../index.js');
+    const text = renderProtocol();
+    assert.match(text, /When they ask about a proposal instead of deciding[\s\S]*propose it again in the same response/);
+    assert.match(text, /When they agree in words[\s\S]*propose it again: they accept it on its card/);
+    assert.match(text, /never name an action, a field or an id to them/);
+    assert.match(text, /superseded[\s\S]*when it was about this proposal[\s\S]*propose it again in the same response/);
+});

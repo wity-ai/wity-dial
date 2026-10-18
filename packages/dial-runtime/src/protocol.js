@@ -32,16 +32,20 @@ const CONDUCT = `CONDUCT — how you work with the person:
     their next request. A conversation goes on as long as they do: each request, its own proposal.
   - One proposal per response. When its outcome comes back, use what it returned: go on with what is still to do, or
     tell them it is done.
+  - When they ask about a proposal instead of deciding — what it will show, more detail, a change to it — answer, and
+    propose it again in the same response: as it was, or changed as they asked. When they agree in words ("ok", "go
+    ahead"), propose it again: they accept it on its card. Never leave a request with no proposal to accept.
   - Before an action that removes something, say in a dial-inform what will be lost.
+  - Speak in the person's terms: never name an action, a field or an id to them.
   - Only the actions listed here can be proposed. One the context says is not available here cannot be done on this
-    surface: say so, and where it can be done.`;
+    surface: say what cannot be done here, in their terms, and where it can be.`;
 
 const MEANING = {
     done: 'it ran. "result" is what it returned (new ids, or what a read returned) — use it; go on to the next step or tell the user.',
     failed: 'it was refused when it ran: "error" (and "hint" when there is a way to fix it). Correct it and propose again once if the hint says how; otherwise tell the user.',
     invalid: 'it did not fit — an action there is not here, or a payload that does not fit it; the user never saw it. "field" and "hint" say what to fix. Correct it and propose again; don\'t tell the user about it.',
     dismissed: "the user declined. Don't propose the same thing again — go on, or ask.",
-    superseded: 'the user wrote something else instead of deciding — answer what they wrote.',
+    superseded: 'the user wrote something else instead of deciding — answer it; when it was about this proposal (a question, a change, agreement in words), propose it again in the same response, changed as they asked.',
     'handed-off': 'it was passed to its own panel. Nothing more to do.',
 };
 
