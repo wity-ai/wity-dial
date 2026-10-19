@@ -60,3 +60,22 @@ function check(schema, value, path, errors) {
         }
     }
 }
+
+/**
+ * An action's payload schema written short, for an assistant to read — { field, optional?, list: [shape], choice: "a"|"b" }
+ * (the actions vectors' <dial-declare>). Moved here on 2026-10-19 from the two authoring packages' context.js (two
+ * identical copies), beside the validator of the same schemas.
+ */
+export function payloadShape(schema) {
+    if (!schema) return 'any';
+    if (schema.enum) return schema.enum.map((e) => JSON.stringify(e)).join('|');
+    if (schema.type === 'array') return `[${payloadShape(schema.items)}]`;
+    if (schema.type === 'object') {
+        const props = schema.properties || {};
+        const required = new Set(schema.required || []);
+        const keys = Object.keys(props);
+        if (!keys.length) return schema.additionalProperties ? '{…}' : '{}';
+        return `{${keys.map((k) => `${k}${required.has(k) ? '' : '?'}${['object', 'array'].includes(props[k].type) || props[k].enum ? `: ${payloadShape(props[k])}` : ''}`).join(', ')}}`;
+    }
+    return schema.type || 'any';
+}

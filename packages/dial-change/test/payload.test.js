@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validatePayload } from '../index.js';
+import { validatePayload, payloadShape } from '../index.js';
 
 const SCHEMA = {
     type: 'object',
@@ -33,4 +33,10 @@ test('null where a list of types allows it; said so where it does not fit', () =
 test('an unknown field is an error, naming the known ones; an open object takes any', () => {
     assert.deepEqual(validatePayload(SCHEMA, { name: 'x', label: 'y' }), ['payload.label is not a known field (expected: name, count, kind, tags, note, meta)']);
     assert.deepEqual(validatePayload(SCHEMA, { name: 'x', meta: { whatever: [1] } }), []);
+});
+
+test('payloadShape: a schema written short — required and optional fields, choices, lists, open objects', () => {
+    assert.equal(payloadShape(SCHEMA), '{name, count?, kind?: "a"|"b", tags?: [string], note?, meta?: {…}}');
+    assert.equal(payloadShape({ type: 'object', properties: {} }), '{}');
+    assert.equal(payloadShape(undefined), 'any');
 });
