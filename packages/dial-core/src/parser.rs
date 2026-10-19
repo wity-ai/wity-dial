@@ -20,15 +20,37 @@ pub fn parse(text: &str) -> Result<Option<DialEnvelope>, DialError> {
     }))
 }
 
-/// Return the prose portions of a response — text outside any <dial> block.
+/// Return the prose portions of a response — text outside any <dial> block (or, with no envelope, outside the
+/// span of its DIAL elements: bare_elements).
 pub fn extract_prose(text: &str) -> String {
     let re = Regex::new(r"<dial[\s\S]*?</dial>").unwrap();
-    re.replace_all(text, "").trim().to_string()
+    if re.is_match(text) {
+        return re.replace_all(text, "").trim().to_string();
+    }
+    match bare_elements(text) {
+        Some((start, end)) => format!("{} {}", &text[..start], &text[end..]).trim().to_string(),
+        None => text.trim().to_string(),
+    }
 }
 
 fn extract_dial_block(text: &str) -> Option<String> {
     let re = Regex::new(r"(?s)<dial[\s\S]*?</dial>").unwrap();
-    re.find(text).map(|m| m.as_str().to_string())
+    if let Some(m) = re.find(text) {
+        return Some(m.as_str().to_string());
+    }
+    // a reply whose DIAL elements came without their <dial> envelope (a model's slip): read as if enveloped — the
+    // elements and their meaning unchanged, only the missing wrapper forgiven (one rule, here, for every surface)
+    bare_elements(text).map(|(start, end)| format!("<dial>{}</dial>", &text[start..end]))
+}
+
+/// With no <dial> envelope: where the reply's DIAL elements are — from the first <dial-…> element to the end of the
+/// last (its closing tag, or a self-closing one). None when there are none.
+fn bare_elements(text: &str) -> Option<(usize, usize)> {
+    let open = Regex::new(r"<dial-[\w]+[\s>/]").unwrap();
+    let start = open.find(text)?.start();
+    let ends = Regex::new(r"</dial-[\w]+>|<dial-[\w]+[^>]*/>").unwrap();
+    let end = ends.find_iter(&text[start..]).map(|m| start + m.end()).last()?;
+    Some((start, end))
 }
 
 fn parse_root_attributes(xml: &str) -> DialAttributes {
