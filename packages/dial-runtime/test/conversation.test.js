@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parse } from '@wity.ai/dial';
-import { Conversation, outcomeReply, policyHuman, scriptedHuman } from '../index.js';
+import { Conversation, outcomeReply, policyHuman, scriptedHuman, REPLY_AGAIN, isReplyAgain } from '../index.js';
 
 // A small domain: a list of notes. add-note needs text; remove-note is destructive; list-notes reads.
 function notesDomain() {
@@ -165,10 +165,50 @@ test('a message can carry its own turn limit — the next one is back to the con
     assert.deepEqual([after.status, after.turns], ['turn-limit', 5]);
 });
 
-test('a plain-text reply is shown and ends the turn', async () => {
+test('a reply not in DIAL is asked for again once; a second miss is shown as text and ends the turn (as before)', async () => {
     const events = [];
-    const r = await new Conversation({ agent: scriptedAgent(['Just text.']), domain: notesDomain(), human: policyHuman(), onEvent: (e) => events.push(e) }).say('hi');
-    assert.equal(r.status, 'idle'); assert.equal(events.find((e) => e.type === 'inform').text, 'Just text.');
+    const agent = scriptedAgent(['Just text.', 'Still text.']);
+    const r = await new Conversation({ agent, domain: notesDomain(), human: policyHuman(), onEvent: (e) => events.push(e) }).say('hi');
+    assert.equal(r.status, 'idle');
+    assert.equal(agent.sent[1], REPLY_AGAIN);
+    assert.deepEqual(events.filter((e) => e.type === 'off-protocol').map((e) => e.text), ['Just text.']);
+    assert.deepEqual(events.filter((e) => e.type === 'reply').map((e) => e.text), ['Still text.']);   // one reply shown
+    assert.equal(events.find((e) => e.type === 'inform').text, 'Still text.');
+});
+
+test('asked again, the agent answers in DIAL: that reply is the one used — its proposal is made, nothing of the prose shown', async () => {
+    const events = [];
+    const domain = notesDomain();
+    const agent = scriptedAgent(['Sure, I could add a note about milk.', dial(suggest('add-note', { text: 'milk' }, 'Add "milk"?')), dial('<dial-inform>Added.</dial-inform>')]);
+    const human = policyHuman('accept');
+    const r = await new Conversation({ agent, domain, human, onEvent: (e) => events.push(e) }).say('add milk');
+    assert.equal(human.seen[0].action, 'add-note');
+    assert.deepEqual(events.filter((e) => e.type === 'reply').length, 2);   // the DIAL reply, then the one after the outcome
+    assert.ok(!events.some((e) => e.type === 'inform' && /could add/.test(e.text)));
+    assert.deepEqual(r.outcomes.map((o) => o.status), ['done']);
+    assert.equal(r.turns, 2);   // asking again is not a turn of its own
+});
+
+test('asked again, the agent gives nothing in time: the first reply is shown', async () => {
+    const events = [];
+    let n = 0;
+    const agent = { async send() { n += 1; return n === 1 ? 'Only prose.' : new Promise(() => {}); } };
+    const r = await new Conversation({ agent, domain: notesDomain(), human: policyHuman(), timeoutMs: 30, onEvent: (e) => events.push(e) }).say('hi');
+    assert.equal(r.status, 'idle');
+    assert.equal(events.find((e) => e.type === 'inform').text, 'Only prose.');
+});
+
+test('a DIAL reply, or its elements without the envelope, is used as it is — never asked again', async () => {
+    const agent = scriptedAgent(['<dial-inform>Hi.</dial-inform>']);
+    await new Conversation({ agent, domain: notesDomain(), human: policyHuman() }).say('hi');
+    assert.equal(agent.sent.length, 1);
+});
+
+test('the request to reply again is marked, for a reader of the history', () => {
+    assert.ok(isReplyAgain(REPLY_AGAIN));
+    assert.ok(isReplyAgain(`<dial>…</dial>\n\n${REPLY_AGAIN}`));
+    assert.ok(!isReplyAgain('<dial-context>the board</dial-context> hi'));
+    assert.ok(!isReplyAgain(undefined));
 });
 
 test('outcome replies are valid DIAL the parser reads back', () => {

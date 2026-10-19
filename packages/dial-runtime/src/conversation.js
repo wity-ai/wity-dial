@@ -19,6 +19,9 @@
  *          say     → the person wrote something else: this and the reply's remaining suggestions are
  *                    'superseded', and the new words go with the next turn
  *
+ * A reply that is not in DIAL carries nothing to act on: it is asked for again, once (conformance.js), and the reply
+ * shown is the one in DIAL — else the latest, as text. Asking again is not a turn of its own.
+ *
  * Every suggestion ends in exactly one outcome, and the agent is told it (see outcome.js). The loop continues while
  * there is something to tell the agent, and stops when a reply needs nothing back, when the agent doesn't answer
  * in time ('no-reply'), or after maxTurns ('turn-limit'). What the agent wasn't told — the send failed, or it
@@ -37,6 +40,7 @@
  */
 import { parse, extractProse } from '@wity.ai/dial';
 import { outcomeReply } from './outcome.js';
+import { REPLY_AGAIN } from './conformance.js';
 
 export class NoReplyError extends Error {
     constructor(ms) { super(`The agent didn't reply within ${Math.round(ms / 1000)}s`); this.name = 'NoReplyError'; }
@@ -96,6 +100,9 @@ export class Conversation {
                 this.#onEvent({ type: 'no-reply', turn, error: e.message });
                 return { status: 'no-reply', turns: turn, outcomes: allOutcomes };
             }
+            // a reply not in DIAL is asked for again, once — it carries nothing to act on (conformance.js); the reply
+            // shown is the one in DIAL, else the latest (never worse than before)
+            reply = await this.#conform(reply, turn);
             this.#onEvent({ type: 'reply', turn, text: reply });
 
             const { outcomes: next, answer } = await this.#handle(reply);
@@ -120,6 +127,20 @@ export class Conversation {
         if (context) parts.push(context);
         if (words !== null && words !== undefined && words !== '') parts.push(words);
         return parts.join('\n\n');
+    }
+
+    // the reply to use: as it is when it is DIAL (or empty); else what the agent gives when asked again (REPLY_AGAIN),
+    // or the first if it gives nothing in time. Not a turn of its own: the turn limit is the person's turns.
+    async #conform(reply, turn) {
+        if (!String(reply ?? '').trim() || await parse(reply)) return reply;
+        this.#onEvent({ type: 'off-protocol', turn, text: reply });
+        try {
+            const again = await this.#send(REPLY_AGAIN);
+            return String(again ?? '').trim() ? again : reply;
+        } catch (e) {
+            if (!(e instanceof NoReplyError)) throw e;
+            return reply;
+        }
     }
 
     #send(message) {
