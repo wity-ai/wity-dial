@@ -40,3 +40,38 @@ export function outcomeReply(outcomes) {
     });
     return `<dial>\n${parts.join('\n')}\n</dial>`;
 }
+
+const OUTCOME_KEY = 'outcome:';
+
+/**
+ * What an outcome reply (outcomeReply) says, read back as data — for whoever reads a conversation's history (the chat
+ * rebuilding its proposal cards): each outcome, in the order reported: { id, action, status, preview?, result?, code?,
+ * field?, hint?, error?, edited? }. The reply's own format is read here, where it is written: the fact is the declare's
+ * payload; the preview (what was proposed, its price included — "Make 2 images · 50 credits") is in the
+ * acknowledgement's words (ACK_TEXT), and read from there.
+ *
+ * @param {Array<{ type: string, of?: string, text?: string, contextKey?: string, payload?: object }>} elements
+ *        a reply's parsed elements (@wity-ai/dial parse(…).elements); anything that is not an outcome is ignored
+ */
+export function readOutcomes(elements) {
+    const acks = new Map((elements ?? []).filter((e) => e?.type === 'dial-acknowledge' && e.of).map((e) => [e.of, e.text ?? '']));
+    return (elements ?? [])
+        .filter((e) => e?.type === 'dial-declare' && typeof e.contextKey === 'string' && e.contextKey.startsWith(OUTCOME_KEY) && e.payload && typeof e.payload === 'object')
+        .map((e) => {
+            const id = e.contextKey.slice(OUTCOME_KEY.length);
+            const fact = e.payload;
+            const preview = previewFromAck(fact.status, acks.get(id));
+            return { id, ...fact, ...(preview ? { preview } : {}) };
+        });
+}
+
+/** An acknowledgement's preview, by its status's words: "Done: <preview>." → "<preview>" (none for invalid). */
+function previewFromAck(status, text) {
+    if (!text || !ACK_TEXT[status] || status === 'invalid') return undefined;
+    const marker = '\u0000';
+    const [before, after] = ACK_TEXT[status]({ preview: marker, action: marker }).split(marker);
+    const unescaped = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    if (!unescaped.startsWith(before) || !unescaped.endsWith(after)) return undefined;
+    const preview = unescaped.slice(before.length, unescaped.length - after.length);
+    return preview || undefined;
+}

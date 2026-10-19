@@ -10,6 +10,6 @@
  *   human  — { decide(suggestion), answer(ask) }              a TUI, an app's cards, or a policy (tests)
  */
 export { Conversation, NoReplyError } from './src/conversation.js';
-export { outcomeReply, OUTCOME_STATUSES } from './src/outcome.js';
+export { outcomeReply, readOutcomes, OUTCOME_STATUSES } from './src/outcome.js';
 export { renderProtocol } from './src/protocol.js';
 export { policyHuman, scriptedHuman } from './src/humans.js';
