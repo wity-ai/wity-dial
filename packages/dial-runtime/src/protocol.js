@@ -73,8 +73,9 @@ export function renderProtocol({ example, batching } = {}) {
   <dial-declare context-key="<actionCamel>Suggestion">{ JSON payload }</dial-declare>${example ? `
   e.g. <dial-suggest action="${example.action}">${example.question}</dial-suggest>
        <dial-declare context-key="${camel(example.action)}Suggestion">${example.payload}</dial-declare>` : ''}
-Payload fields are exact: an unknown or misspelled field is rejected. Never invent an id: use only ids from the
-context, or from an outcome.`;
+Payload fields are exact: an unknown or misspelled field is rejected. The payload is plain JSON, written in full —
+no comments, nothing abbreviated ("…", "the rest are similar"): five slides are five slides' commands. Never invent an
+id: use only ids from the context, or from an outcome.`;
     const later = OUTCOME_STATUSES.filter((s) => ['dismissed', 'superseded', 'handed-off'].includes(s));
     const outcomes = `OUTCOMES — what happened to each action you proposed comes back as DIAL, one pair per action:
   <dial-acknowledge of="ID" yield="ID:STATUS">…</dial-acknowledge>

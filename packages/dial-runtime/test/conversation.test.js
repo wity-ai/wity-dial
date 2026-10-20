@@ -315,3 +315,16 @@ test('a domain may validate asynchronously — checked where the work is kept �
     await c.say('go');
     assert.deepEqual(shown, [{ ok: true }]);
 });
+
+test('a payload that is not JSON (a comment, an abbreviation): told so — never that the fields it wrote are missing; the corrected one goes on', async () => {
+    const domain = notesDomain();
+    const lazy = '<dial-suggest action="add-note">Add it?</dial-suggest><dial-declare context-key="x">{ "text": "milk",\n // the rest are similar\n }</dial-declare>';
+    const agent = scriptedAgent([dial(lazy), dial(suggest('add-note', { text: 'milk' })), dial('<dial-acknowledge>Done.</dial-acknowledge>')]);
+    await new Conversation({ agent, domain, human: policyHuman('accept') }).say('add milk');
+    const [told] = outcomesIn(agent.sent[1]);
+    assert.equal(told.status, 'invalid');
+    assert.equal(told.code, 'unreadable-payload');
+    assert.match(told.hint, /The payload is not JSON .* no comments .* nothing left out or abbreviated/);
+    assert.ok(!('field' in told), 'no field is named missing');
+    assert.deepEqual(domain.notes, ['milk']);
+});

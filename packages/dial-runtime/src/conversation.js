@@ -200,6 +200,7 @@ export class Conversation {
         const suggestion = { id, action, text: el.text ?? '', payload, preview: '', destructive: !!spec?.destructive };
 
         if (!spec) return outcome('invalid', { code: 'unknown-action', hint: `There is no action '${action}'.` });
+        if (payload?.[UNREADABLE]) return outcome('invalid', { code: 'unreadable-payload', hint: `The payload is not JSON (${payload[UNREADABLE]}). ${UNREADABLE_HINT}` });
         // the person already moved on (wrote something while an earlier suggestion of this reply was pending)
         if (this.#pendingText !== null) { suggestion.preview = await this.#preview(action, payload); return outcome('superseded'); }
 
@@ -248,12 +249,18 @@ export class Conversation {
     }
 }
 
+/**
+ * A declare's payload — or UNREADABLE (with why) when its text is not JSON: the agent is told that, not that the
+ * fields it did write are missing (a comment or a "…" in it made the whole of it unreadable).
+ */
+const UNREADABLE = Symbol('unreadable payload');
 function readPayload(declare) {
     if (declare.payload !== null && declare.payload !== undefined) return declare.payload;
     const text = declare.text?.trim();
     if (!text) return undefined;
-    try { return JSON.parse(text); } catch { return undefined; }
+    try { return JSON.parse(text); } catch (e) { return { [UNREADABLE]: e?.message ?? 'not JSON' }; }
 }
+export const UNREADABLE_HINT = "Write the payload as plain JSON: no comments (// or /* */), nothing left out or abbreviated (no '…', no 'the rest are similar') — every item written in full.";
 
 // what the agent should react to now — the rest (dismissed, superseded, handed-off) waits for the person's next words
 const needsReply = (outcome) => ['done', 'failed', 'invalid'].includes(outcome.status);
