@@ -43,7 +43,7 @@ const CONDUCT = `CONDUCT — how you work with the person:
 const MEANING = {
     done: 'it ran. "result" is what it returned (new ids, or what a read returned) — use it; go on to the next step or tell the user.',
     failed: 'it was refused when it ran: "error" (and "hint" when there is a way to fix it). Correct it and propose again once if the hint says how; otherwise tell the user.',
-    invalid: 'it did not fit — an action there is not here, or a payload that does not fit it; the user never saw it. "field" and "hint" say what to fix. Correct it and propose again; don\'t tell the user about it.',
+    invalid: 'it did not fit — an action there is not here, or a payload that does not fit it; the user never saw it. "field" and "hint" say what to fix. Correct it and propose again as if it were the first — say nothing to the user of an earlier attempt, an error, or an action\'s name.',
     dismissed: "the user declined. Don't propose the same thing again — go on, or ask.",
     superseded: 'the user wrote something else instead of deciding — answer it; when it was about this proposal (a question, a change, agreement in words), propose it again in the same response, changed as they asked.',
     'handed-off': 'it was passed to its own panel. Nothing more to do.',

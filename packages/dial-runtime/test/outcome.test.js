@@ -36,3 +36,9 @@ test('anything that is not an outcome is ignored; nothing in, nothing out', asyn
     assert.deepEqual(readOutcomes(env.elements), []);
     assert.deepEqual(readOutcomes(undefined), []);
 });
+
+test('an invalid proposal is reported as one the person never saw — corrected, it is proposed as if for the first time, its earlier attempt never mentioned', async () => {
+    const { outcomeReply } = await import('../index.js');
+    const text = outcomeReply([{ id: 'sg-1', action: 'media.request', status: 'invalid', code: 'unknown-action', hint: "There is no action 'media.request'." }]);
+    assert.match(text, /Not proposed to the user — there is no action media\.request here\. They never saw it: propose the corrected one as if it were the first — say nothing of an earlier attempt, an error, or an action&#39;s name\.|They never saw it: propose the corrected one as if it were the first — say nothing of an earlier attempt, an error, or an action's name\./);
+});
