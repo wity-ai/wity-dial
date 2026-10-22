@@ -5,7 +5,8 @@
  * copies; this one, scene-authoring's, also takes null in a list of types — otherwise the same).
  *
  * A JSON-schema subset — what the action schemas use: type (object|array|string|number|integer|boolean|null — one,
- * or a list meaning any of them), properties, required, items, enum, minLength, minItems, additionalProperties
+ * or a list meaning any of them), properties, required, items, enum, minLength, maxLength, pattern, minimum, maximum,
+ * minItems, maxItems, additionalProperties
  * (default **false**: an unknown field is an error, so a caller sending `data.label` where the action takes `label`
  * fails loudly instead of silently doing nothing).
  *
@@ -41,9 +42,18 @@ function check(schema, value, path, errors) {
         errors.push(`${path} must be ${named.join(' or ')}${types.includes('null') ? ' (or null)' : ''}`);
         return;
     }
-    if (t === 'string' && schema.minLength && value.length < schema.minLength) errors.push(`${path} must not be empty`);
+    if (t === 'string') {
+        if (schema.minLength && value.length < schema.minLength) errors.push(`${path} must not be empty`);
+        if (schema.maxLength && value.length > schema.maxLength) errors.push(`${path} must be at most ${schema.maxLength} characters`);
+        if (schema.pattern && !new RegExp(schema.pattern).test(value)) errors.push(`${path} must be ${schema.description ?? `like ${schema.pattern}`}`);
+    }
+    if (t === 'number' || t === 'integer') {
+        if (schema.minimum !== undefined && value < schema.minimum) errors.push(`${path} must be at least ${schema.minimum}`);
+        if (schema.maximum !== undefined && value > schema.maximum) errors.push(`${path} must be at most ${schema.maximum}`);
+    }
     if (t === 'array') {
         if (schema.minItems && value.length < schema.minItems) errors.push(`${path} needs at least ${schema.minItems} item(s)`);
+        if (schema.maxItems && value.length > schema.maxItems) errors.push(`${path} takes at most ${schema.maxItems} item(s)`);
         if (schema.items) value.forEach((v, i) => check(schema.items, v, `${path}[${i}]`, errors));
     }
     if (t === 'object') {

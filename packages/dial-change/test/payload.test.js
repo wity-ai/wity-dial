@@ -40,3 +40,17 @@ test('payloadShape: a schema written short — required and optional fields, cho
     assert.equal(payloadShape({ type: 'object', properties: {} }), '{}');
     assert.equal(payloadShape(undefined), 'any');
 });
+
+test('the bounds a schema declares are kept: pattern (said by its description), minimum / maximum, maxLength, maxItems', () => {
+    const S = { type: 'object', properties: {
+        link: { type: ['string', 'null'], pattern: '^https?://', description: 'a link (https://…)' },
+        n: { type: 'integer', minimum: 1, maximum: 5 }, name: { type: 'string', maxLength: 3 },
+        tags: { type: 'array', items: { type: 'string' }, maxItems: 2 },
+    } };
+    assert.deepEqual(validatePayload(S, { link: 'https://x', n: 3, name: 'abc', tags: ['a', 'b'] }), []);
+    assert.deepEqual(validatePayload(S, { link: null }), [], 'null where null is allowed: no pattern asked of it');
+    assert.deepEqual(validatePayload(S, { link: 'x.png', n: 0, name: 'abcd', tags: ['a', 'b', 'c'] }), [
+        'payload.link must be a link (https://…)', 'payload.n must be at least 1', 'payload.name must be at most 3 characters', 'payload.tags takes at most 2 item(s)',
+    ]);
+    assert.deepEqual(validatePayload(S, { n: 6 }), ['payload.n must be at most 5']);
+});
