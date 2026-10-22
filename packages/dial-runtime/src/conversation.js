@@ -38,8 +38,9 @@
  *   run(action, payload)      → result (may be async); throws on failure — { message, code?, field?, hint? }
  *   context()                 → text sent with every turn (e.g. a board snapshot), or ''
  */
-import { parse, extractProse } from '@wity.ai/dial';
+import { parse } from '@wity.ai/dial';
 import { outcomeReply } from './outcome.js';
+import { toldOutside, toldOf, askOf } from './shown.js';
 import { REPLY_AGAIN } from './conformance.js';
 
 export class NoReplyError extends Error {
@@ -151,25 +152,23 @@ export class Conversation {
 
     // One reply's elements, in order → the outcomes to report and an ask's answer (if any)
     async #handle(reply) {
+        // what is shown is decided in one place (shown.js) — live here, and when a reply is read back
         const envelope = await parse(reply);
-        if (!envelope) {
-            const text = String(reply ?? '').trim();
-            if (text) this.#onEvent({ type: 'inform', text });
-            return { outcomes: [] };
-        }
-        const prose = (await extractProse(reply))?.trim();
-        if (prose) this.#onEvent({ type: 'inform', text: prose });
+        for (const told of await toldOutside(reply, envelope)) this.#onEvent(told);
+        if (!envelope) return { outcomes: [] };
 
         const outcomes = [];
         let answer;
         const elements = envelope.elements;
         for (let i = 0; i < elements.length; i++) {
             const el = elements[i];
-            if (el.type === 'dial-inform' || el.type === 'dial-acknowledge') {
-                if (el.text) this.#onEvent({ type: 'inform', text: el.text, act: el.type === 'dial-acknowledge' ? 'acknowledge' : 'inform' });
-            } else if (el.type === 'dial-ask') {
-                const ask = { text: el.text ?? '', responseType: el.responseType, options: el.options ?? [] };
-                this.#onEvent({ type: 'ask', ...ask });
+            const told = toldOf(el);
+            const asked = askOf(el);
+            if (told) {
+                this.#onEvent(told);
+            } else if (asked) {
+                this.#onEvent(asked);
+                const { type: _, ...ask } = asked;
                 if (this.#pendingText === null) {
                     // no answer (null / empty) = the person hasn't answered: the question stands and no turn follows
                     const given = String(await this.#human.answer(ask) ?? '');

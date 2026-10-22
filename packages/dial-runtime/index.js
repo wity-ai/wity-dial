@@ -12,5 +12,6 @@
 export { Conversation, NoReplyError } from './src/conversation.js';
 export { outcomeReply, readOutcomes, OUTCOME_STATUSES } from './src/outcome.js';
 export { REPLY_AGAIN, isReplyAgain } from './src/conformance.js';
+export { shownOf, toldOutside, toldOf, askOf } from './src/shown.js';
 export { renderProtocol } from './src/protocol.js';
 export { policyHuman, scriptedHuman } from './src/humans.js';
