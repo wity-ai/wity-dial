@@ -1,6 +1,23 @@
 use crate::types::*;
 use crate::error::DialError;
 use regex::Regex;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::sync::OnceLock;
+
+/// A fixed pattern, compiled once — on first use — however often a reply is parsed (a streamed reply is parsed again as
+/// each piece of it arrives). The same pattern as written; only when it is compiled changes.
+macro_rules! re {
+    ($pattern:expr) => {{
+        static RE: OnceLock<Regex> = OnceLock::new();
+        RE.get_or_init(|| Regex::new($pattern).unwrap())
+    }};
+}
+
+thread_local! {
+    // an attribute's pattern, by its name — compiled once each (the names are the protocol's own, a handful)
+    static ATTR_RES: RefCell<HashMap<String, Regex>> = RefCell::new(HashMap::new());
+}
 
 /// Extract and parse a <dial> envelope from AI response text.
 /// Returns None if no DIAL envelope is found — caller falls back to plain text handling.
@@ -23,7 +40,7 @@ pub fn parse(text: &str) -> Result<Option<DialEnvelope>, DialError> {
 /// Return the prose portions of a response — text outside any <dial> block (or, with no envelope, outside the
 /// span of its DIAL elements: bare_elements).
 pub fn extract_prose(text: &str) -> String {
-    let re = Regex::new(r"<dial[\s\S]*?</dial>").unwrap();
+    let re = re!(r"<dial[\s\S]*?</dial>");
     if re.is_match(text) {
         return re.replace_all(text, "").trim().to_string();
     }
@@ -34,7 +51,7 @@ pub fn extract_prose(text: &str) -> String {
 }
 
 fn extract_dial_block(text: &str) -> Option<String> {
-    let re = Regex::new(r"(?s)<dial[\s\S]*?</dial>").unwrap();
+    let re = re!(r"(?s)<dial[\s\S]*?</dial>");
     if let Some(m) = re.find(text) {
         return Some(m.as_str().to_string());
     }
@@ -46,15 +63,15 @@ fn extract_dial_block(text: &str) -> Option<String> {
 /// With no <dial> envelope: where the reply's DIAL elements are — from the first <dial-…> element to the end of the
 /// last (its closing tag, or a self-closing one). None when there are none.
 fn bare_elements(text: &str) -> Option<(usize, usize)> {
-    let open = Regex::new(r"<dial-[\w]+[\s>/]").unwrap();
+    let open = re!(r"<dial-[\w]+[\s>/]");
     let start = open.find(text)?.start();
-    let ends = Regex::new(r"</dial-[\w]+>|<dial-[\w]+[^>]*/>").unwrap();
+    let ends = re!(r"</dial-[\w]+>|<dial-[\w]+[^>]*/>");
     let end = ends.find_iter(&text[start..]).map(|m| start + m.end()).last()?;
     Some((start, end))
 }
 
 fn parse_root_attributes(xml: &str) -> DialAttributes {
-    let open_tag_re = Regex::new(r"<dial([^>]*)>").unwrap();
+    let open_tag_re = re!(r"<dial([^>]*)>");
     let attrs_str = open_tag_re
         .captures(xml)
         .and_then(|c| c.get(1))
@@ -71,7 +88,7 @@ fn parse_root_attributes(xml: &str) -> DialAttributes {
 
 fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
     // Strip root <dial ...> and </dial>
-    let open_re = Regex::new(r"^<dial[^>]*>").unwrap();
+    let open_re = re!(r"^<dial[^>]*>");
     let inner = open_re.replace(xml, "");
     let inner = inner.trim_end_matches("</dial>").trim();
 
@@ -80,7 +97,7 @@ fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
     // Find each <dial-* opening (or self-closing) tag; no backreference needed.
     // Rust's regex crate does not support backreferences (\1), so we find the
     // matching closing tag manually using str::find after the opening tag.
-    let open_tag_re = Regex::new(r"<(dial-[\w]+)([^>]*?)(/?>)").unwrap();
+    let open_tag_re = re!(r"<(dial-[\w]+)([^>]*?)(/?>)");
     let mut search = inner;
 
     loop {
@@ -135,8 +152,7 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
 
         "dial-ask" => {
             let options = parse_options(inner);
-            let text_only = Regex::new(r"(?s)<dial-option[\s\S]*?</dial-option>")
-                .unwrap()
+            let text_only = re!(r"(?s)<dial-option[\s\S]*?</dial-option>")
                 .replace_all(inner, "")
                 .trim()
                 .to_string();
@@ -194,7 +210,7 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
 }
 
 fn parse_steps(inner: &str) -> Vec<DialStep> {
-    let re = Regex::new(r"(?s)<step([^>]*)>([\s\S]*?)</step>").unwrap();
+    let re = re!(r"(?s)<step([^>]*)>([\s\S]*?)</step>");
     re.captures_iter(inner)
         .map(|cap| {
             let attrs = &cap[1];
@@ -213,7 +229,7 @@ fn parse_steps(inner: &str) -> Vec<DialStep> {
 }
 
 fn parse_options(inner: &str) -> Vec<DialOption> {
-    let re = Regex::new(r"(?s)<dial-option([^>]*)>([\s\S]*?)</dial-option>").unwrap();
+    let re = re!(r"(?s)<dial-option([^>]*)>([\s\S]*?)</dial-option>");
     re.captures_iter(inner)
         .map(|cap| {
             let attrs = &cap[1];
@@ -228,22 +244,27 @@ fn parse_options(inner: &str) -> Vec<DialOption> {
 }
 
 fn parse_payload(inner: &str) -> Option<serde_json::Value> {
-    let re = Regex::new(r"(?s)<dial-payload[^>]*>([\s\S]*?)</dial-payload>").unwrap();
+    let re = re!(r"(?s)<dial-payload[^>]*>([\s\S]*?)</dial-payload>");
     re.captures(inner)
         .and_then(|c| c.get(1))
         .and_then(|m| serde_json::from_str(m.as_str().trim()).ok())
 }
 
 fn strip_payload_tags(inner: &str) -> String {
-    let re = Regex::new(r"(?s)<dial-payload[\s\S]*?</dial-payload>").unwrap();
+    let re = re!(r"(?s)<dial-payload[\s\S]*?</dial-payload>");
     re.replace_all(inner, "").to_string()
 }
 
 /// Parse a single attribute value from an attribute string.
 pub fn attr(attrs: &str, name: &str) -> Option<String> {
-    let pattern = format!(r#"{}=["']([^"']*)["']"#, regex::escape(name));
-    let re = Regex::new(&pattern).unwrap();
-    re.captures(attrs)
-        .and_then(|c| c.get(1))
-        .map(|m| m.as_str().to_string())
+    ATTR_RES.with(|cache| {
+        let mut cache = cache.borrow_mut();
+        let re = cache.entry(name.to_string()).or_insert_with(|| {
+            let pattern = format!(r#"{}=["']([^"']*)["']"#, regex::escape(name));
+            Regex::new(&pattern).unwrap()
+        });
+        re.captures(attrs)
+            .and_then(|c| c.get(1))
+            .map(|m| m.as_str().to_string())
+    })
 }
