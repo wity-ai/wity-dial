@@ -58,3 +58,8 @@ test('a question about a proposal is answered and the proposal made again; words
     assert.match(text, /never name an action, a field or an id to them/);
     assert.match(text, /superseded[\s\S]*when it was about this proposal[\s\S]*propose it again in the same response/);
 });
+
+test('never an id or a link made up: only those from the context, the person or an outcome', () => {
+    const text = renderProtocol();
+    assert.match(text, /Never invent an\s+id or a link \(a file, an image, a page\): use only ids and links from the context, from the person, or from an outcome\./);
+});
