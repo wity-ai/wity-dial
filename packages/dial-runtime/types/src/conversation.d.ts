@@ -5,7 +5,8 @@ export class Conversation {
     /**
      * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns? }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
-     *     sent · reply · inform (act: 'inform' | 'acknowledge') · ask · suggestion · outcome · no-reply · turn-limit
+     *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
+ *     suggestion · outcome · no-reply · turn-limit
      */
     constructor({ agent, domain, human, onEvent, timeoutMs, maxTurns }: {
         agent: any;

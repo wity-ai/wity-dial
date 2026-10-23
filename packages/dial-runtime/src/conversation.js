@@ -28,6 +28,10 @@
  * didn't answer — is kept and goes with the next thing the person says: the outcomes, and words the person gave
  * inside the conversation (an answer to its question, or what they wrote instead of deciding). say('') sends just that.
  *
+ * An agent that streams its reply — send(message, { onProgress }), onProgress(the reply so far) — has what of it is
+ * whole told as it comes (live.js): its leading informs and acknowledgements, each once; the rest when it is whole,
+ * as always. An agent that does not stream is as before.
+ *
  * Runs wherever the parser does: in Node its parse() is synchronous, in a browser it returns a promise (the
  * WebAssembly loads on first use) — both are awaited.
  *
@@ -42,6 +46,7 @@ import { parse } from '@wity.ai/dial';
 import { outcomeReply } from './outcome.js';
 import { toldOutside, toldOf, askOf } from './shown.js';
 import { REPLY_AGAIN } from './conformance.js';
+import { LiveReply } from './live.js';
 
 export class NoReplyError extends Error {
     constructor(ms) { super(`The agent didn't reply within ${Math.round(ms / 1000)}s`); this.name = 'NoReplyError'; }
@@ -59,7 +64,8 @@ export class Conversation {
     /**
      * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns? }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
-     *     sent · reply · inform (act: 'inform' | 'acknowledge') · ask · suggestion · outcome · no-reply · turn-limit
+     *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
+ *     suggestion · outcome · no-reply · turn-limit
      */
     constructor({ agent, domain, human, onEvent = () => {}, timeoutMs = 90_000, maxTurns = 8 }) {
         for (const [name, value, method] of [['agent', agent, 'send'], ['human', human, 'decide'], ['domain', domain, 'run']]) {
@@ -92,10 +98,13 @@ export class Conversation {
             }
             const message = this.#compose(outcomes, words);
             this.#onEvent({ type: 'sent', turn, message });
+            // what of the reply is whole is told as it comes, when the agent streams it (live.js)
+            const live = new LiveReply(turn, (e) => this.#onEvent(e));
             let reply;
             try {
-                reply = await this.#send(message);
+                reply = await this.#send(message, live);
             } catch (e) {
+                await live.close();
                 keep(turn);
                 if (!(e instanceof NoReplyError)) throw e;
                 this.#onEvent({ type: 'no-reply', turn, error: e.message });
@@ -103,10 +112,11 @@ export class Conversation {
             }
             // a reply not in DIAL is asked for again, once — it carries nothing to act on (conformance.js); the reply
             // shown is the one in DIAL, else the latest (never worse than before)
+            const toldLive = await live.close();
             reply = await this.#conform(reply, turn);
             this.#onEvent({ type: 'reply', turn, text: reply });
 
-            const { outcomes: next, answer } = await this.#handle(reply);
+            const { outcomes: next, answer } = await this.#handle(reply, toldLive);
             allOutcomes.push(...next);
             outcomes = next;
             words = this.#pendingText ?? answer ?? null;
@@ -144,14 +154,18 @@ export class Conversation {
         }
     }
 
-    #send(message) {
+    // an agent that streams its reply is told where (onProgress: the reply so far); one that does not, ignores it
+    #send(message, live) {
         let timer;
         const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(new NoReplyError(this.#timeoutMs)), this.#timeoutMs); });
-        return Promise.race([Promise.resolve(this.#agent.send(message)), limit]).finally(() => clearTimeout(timer));
+        const sent = this.#agent.send(message, live ? { onProgress: (text) => live.progress(text) } : undefined);
+        return Promise.race([Promise.resolve(sent), limit]).finally(() => clearTimeout(timer));
     }
 
-    // One reply's elements, in order → the outcomes to report and an ask's answer (if any)
-    async #handle(reply) {
+    // One reply's elements, in order → the outcomes to report and an ask's answer (if any). toldLive: what of it was
+    // told as it came (live.js) — its leading told elements, in order — not told again.
+    async #handle(reply, toldLive = []) {
+        const already = [...toldLive];
         // what is shown is decided in one place (shown.js) — live here, and when a reply is read back
         const envelope = await parse(reply);
         for (const told of await toldOutside(reply, envelope)) this.#onEvent(told);
@@ -165,7 +179,8 @@ export class Conversation {
             const told = toldOf(el);
             const asked = askOf(el);
             if (told) {
-                this.#onEvent(told);
+                if (already.length && already[0].text === told.text && already[0].act === told.act) already.shift();
+                else { already.length = 0; this.#onEvent(told); }
             } else if (asked) {
                 this.#onEvent(asked);
                 const { type: _, ...ask } = asked;
