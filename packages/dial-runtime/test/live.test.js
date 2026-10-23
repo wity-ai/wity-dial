@@ -76,3 +76,19 @@ test('an agent that does not stream: as before', async () => {
     await conv.say('go');
     assert.deepEqual(seen, ['sent', 'reply', 'inform']);
 });
+
+test('a reply that began again (another model answered): nothing more live — the whole reply as it is, nothing missed', async () => {
+    const seen = [];
+    const agent = { async send(message, { onProgress }) {
+        onProgress('<dial><dial-inform>First try.</dial-inform>');
+        await tick();
+        onProgress('<dial><dial-inform>Second');                    // another model, from its start
+        await tick();
+        onProgress('<dial><dial-inform>Second try.</dial-inform>');
+        await tick();
+        return '<dial><dial-inform>Second try.</dial-inform><dial-inform>More.</dial-inform></dial>';
+    } };
+    const conv = new Conversation({ agent, domain: NOTHING, human: AWAY, onEvent: (e) => (e.type === 'inform' || e.type === 'reply') && seen.push(e.type === 'reply' ? 'REPLY' : e.text) });
+    await conv.say('go');
+    assert.deepEqual(seen, ['First try.', 'REPLY', 'Second try.', 'More.']);
+});

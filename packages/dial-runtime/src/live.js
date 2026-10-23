@@ -6,7 +6,9 @@
  *               has come so far gives only whole elements, in order, only ever added to (dial-core's streaming contract)
  *   not live    from its first element that is not simply told (a question, a proposal, a hand-over …) on: those wait
  *               for the whole reply, as they always did — nothing is told ahead of what the person must answer first;
- *               and the whole of a reply that opens with prose before its DIAL (prose is shown first, once it is whole)
+ *               the whole of a reply that opens with prose before its DIAL (prose is shown first, once it is whole);
+ *               and the rest of a reply that began again (its text no longer continues what came before: the agent's
+ *               side fell back to another model) — what is told of it then is the whole reply's, once it is whole
  *
  * Once the reply is whole, it is handled as always, but for what was told live already: that is not told again
  * (Conversation). Every step of it is an event too — reply-progress { turn, text }, the reply so far — for a surface
@@ -41,6 +43,7 @@ export class LiveReply {
 
     async #read(text) {
         if (text === this.#last) return;
+        if (this.#last !== null && !text.startsWith(this.#last)) this.#done = true;   // began again: another reply
         this.#last = text;
         this.#emit({ type: 'reply-progress', turn: this.#turn, text });
         if (this.#done) return;
