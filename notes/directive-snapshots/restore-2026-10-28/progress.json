@@ -1,0 +1,78 @@
+{
+  "sage": {
+    "directives": {
+      "b49bbe5c-7755-4545-b8fe-4ff0e756c0a2": "b49bbe5c-7755-4545-b8fe-4ff0e756c0a2",
+      "abf01be0-8466-49b5-8096-db0c86f12b63": "abf01be0-8466-49b5-8096-db0c86f12b63",
+      "2837ee85-fb75-4af9-955a-f921493c3ce0": "c3024937-d93a-49da-bb91-15bc452f8244",
+      "c55ccf3b-d60e-4b79-a5eb-8da44b8283f0": "c55ccf3b-d60e-4b79-a5eb-8da44b8283f0",
+      "5eb8db09-be90-4840-bc59-5d61638760e9": "b080b343-b4b5-4a5b-a2e4-4e0cfe682da6"
+    }
+  },
+  "maya": {
+    "directives": {
+      "0e9329e1-fca3-4263-9c58-8b8d671951e1": "0e9329e1-fca3-4263-9c58-8b8d671951e1",
+      "9e8fe208-7f4c-4c84-87eb-4ab6cd52a190": "9e8fe208-7f4c-4c84-87eb-4ab6cd52a190",
+      "61b3bf76-7478-44f6-b20c-983b471d4cc8": "8de7146d-c47d-4cec-8ea5-f67a54a038c0"
+    }
+  },
+  "lila": {
+    "directives": {
+      "eb578419-0e32-481a-a324-6d845ddd292c": "eb578419-0e32-481a-a324-6d845ddd292c",
+      "420d846d-fb99-4800-b1e2-e230b91852a4": "420d846d-fb99-4800-b1e2-e230b91852a4",
+      "dd9b5ceb-b7a9-402c-8b8b-4a186beb12a6": "4dbb100e-c29a-4d4f-a1d0-e2431bf92fc4"
+    }
+  },
+  "tara": {
+    "directives": {
+      "39c72fcd-df2f-4e6f-95a4-b9b816579c0b": "a6e85a10-7ff7-4fea-8612-73c532b89016",
+      "04d9397c-0d5f-4e3f-9af9-5c5ad45bc283": "7ddc0c00-e0f4-4cbd-b69b-122d9b78d606",
+      "6df8a3eb-cd64-4a52-8332-9c5c9d43de9c": "a66ed128-359e-4924-a1c2-0e5e2d2cdec8"
+    },
+    "space": "control-space-ext-d2b80ae7-68b7-4852-b5d7-a65bf15268b4",
+    "assistant": {
+      "puid": "fbe4cacc-8274-47b9-a7bc-393bfab0b4f1",
+      "slug": "tara-agents-assistant-wity-fbe4cacc"
+    },
+    "privacy": "public"
+  },
+  "avvai": {
+    "directives": {
+      "aa2ea8ed-53eb-4c97-b737-d9ad9aa41e28": "11064039-8a78-4351-935f-d14c7f59bb0f",
+      "a22eff97-de6b-474b-a0b5-597ac73a9a21": "28ed356f-bdc9-4d3b-8329-a269dbdf2d11",
+      "6ba19ee2-dea3-42cf-b3b3-d6a29ad73461": "b0cf2dd1-2c9c-444b-baa5-a1a7e507a5cf"
+    },
+    "space": "control-space-ext-39589405-346f-4a52-99dd-943a2f7e9647",
+    "assistant": {
+      "puid": "0d49b137-08a5-4c48-a7cd-90f21571b493",
+      "slug": "avvai-publishing-assistant-jity-0d49b137"
+    },
+    "privacy": "public"
+  },
+  "gargi": {
+    "directives": {
+      "f0de5c14-a03e-4b82-8b32-df3e0ee4f2bb": "8cea6554-5eef-4866-9e26-03b1ea67f88c",
+      "ea9193c0-2e8f-4e03-a655-b62a55603c09": "58bd1667-15b2-489a-a7f9-195ade53a72a"
+    },
+    "space": "control-space-ext-911d2b9b-6c2d-42b1-b67b-3e1acbc73595",
+    "assistant": {
+      "puid": "f960c595-5703-4183-a599-4e16b5c8d203",
+      "slug": "gargi-f960c595"
+    },
+    "privacy": "public"
+  },
+  "vritti": {
+    "directives": {
+      "5a27af75-d7b9-4151-a6a4-911f023cfc44": "7b68ff1c-b0d2-4534-93d8-f4f5194aa91e",
+      "7fb2a1d3-3b6e-42b7-951f-97a402575c33": "a32b42ff-f1fc-407a-85db-bb92eb930430",
+      "4705c943-063d-4489-9727-b0dabe2f933e": "f159a954-d549-4726-99da-f080f1c8f762",
+      "531cc269-eb0a-43f7-a0ed-9be41d9c0a70": "ae1c6c8d-19b9-463f-9a58-98ba6c51ee61",
+      "2a96e80e-b1cc-4d91-b174-527ce76033ae": "aacc20f4-8429-4f4c-8290-fff60745d4c6"
+    },
+    "space": "control-space-ext-13d0a3a8-69a9-4c6d-90f1-64647e4297af",
+    "assistant": {
+      "puid": "23ffd880-43ca-451a-b889-3cfc66a62491",
+      "slug": "vritti-23ffd880"
+    },
+    "privacy": "private"
+  }
+}

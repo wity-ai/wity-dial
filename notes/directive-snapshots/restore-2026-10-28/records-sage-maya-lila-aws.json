@@ -1,0 +1,54 @@
+{
+ "sage": {
+  "at": "2026-10-27T10:16:49.900Z",
+  "puid": "36e77071-b228-4c85-8eed-8d5cc92ca1d2",
+  "slug": "sage-thinking-assistant-wity-app-36e77071",
+  "name": "Sage - Thinking Assistant @ Wity App",
+  "title": "AI thinking assistant for notebooks, system maps, and workbooks",
+  "description": "In-app AI assistant for Wity's thinking tools — helps build reactive notebooks, system architecture maps, and analytical workbooks via structured DIAL exchange.",
+  "card": "https://ugc.wity.ai/transformed/1792617628445.webp",
+  "directives": "control-space-ext-97d1523b-f07c-4dba-9d66-77c10d76481e",
+  "avatar": {
+   "dark": "https://ugc.wity.ai/transformed/1792617628445.webp",
+   "light": "https://ugc.wity.ai/transformed/1792617628445.webp"
+  },
+  "view": {
+   "dial": true
+  },
+  "link": "https://chat.wity.ai/?artefact=sage-thinking-assistant-wity-app-36e77071"
+ },
+ "maya": {
+  "at": "2026-10-27T10:16:58.154Z",
+  "puid": "6ed96461-488d-4961-8867-762c6234a52a",
+  "slug": "maya-design-assistant-jity-design-studio-6ed96461",
+  "name": "Maya - Design Assistant @ Jity Design Studio",
+  "title": "AI design assistant for multi-page visual designs: posters, carousels, decks",
+  "card": "https://ugc.wity.ai/transformed/1792615128932.jpg",
+  "directives": "control-space-ext-94f09a24-5877-4032-a596-e4d644316973",
+  "avatar": {
+   "dark": "https://ugc.wity.ai/transformed/1792615128932.jpg",
+   "light": "https://ugc.wity.ai/transformed/1792615128932.jpg"
+  },
+  "view": {
+   "dial": true
+  },
+  "link": "https://chat.wity.ai/?artefact=maya-design-assistant-jity-design-studio-6ed96461"
+ },
+ "lila": {
+  "at": "2026-10-27T10:17:00.661Z",
+  "puid": "8d309faf-1b1d-40ee-842a-7c03045602b6",
+  "slug": "lila-creative-assistant-jity-video-studio-8d309faf",
+  "name": "Lila - Creative Assistant @ Jity Video Studio",
+  "title": "AI creative assistant for storytelling in time: videos and sound pieces",
+  "card": "https://ugc.wity.ai/transformed/1792617102987.jpg",
+  "directives": "control-space-ext-df71636b-0475-4a59-9dd5-96f26b84844e",
+  "avatar": {
+   "dark": "https://ugc.wity.ai/transformed/1792617102987.jpg",
+   "light": "https://ugc.wity.ai/transformed/1792617102987.jpg"
+  },
+  "view": {
+   "dial": true
+  },
+  "link": "https://chat.wity.ai/?artefact=lila-creative-assistant-jity-video-studio-8d309faf"
+ }
+}
