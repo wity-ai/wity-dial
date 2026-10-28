@@ -1,0 +1,1 @@
+Control space for the in-app AI thinking assistant in Wity App (notebooks, system maps, workbooks)

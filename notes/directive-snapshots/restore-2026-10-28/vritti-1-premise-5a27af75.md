@@ -1,0 +1,1 @@
+Rubric for Vritti, the judge that benchmarks wity-decisions and related pipelines: given a system, one decision case and what the engine did not see, say which option was right and what that judgement depends on.

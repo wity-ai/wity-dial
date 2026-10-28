@@ -1,0 +1,3 @@
+Reply with one JSON object and nothing else — no prose before or after, no code fence, no steps to run:
+
+{"fromBoard": "<option id | NONE | UNDETERMINED>", "fromWorld": "<option id | NONE | UNDETERMINED>", "alsoRight": ["<option id>", ...], "needs": ["option-meanings" | "system-state" | "history" | "domain-knowledge" | "nothing", ...], "missing": "<one sentence>", "sure": "high" | "medium" | "low"}

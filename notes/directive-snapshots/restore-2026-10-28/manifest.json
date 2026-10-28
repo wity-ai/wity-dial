@@ -1,0 +1,307 @@
+{
+  "asOf": "2026-10-27 (AWS, before it went down)",
+  "assistants": {
+    "sage": {
+      "exists": "36e77071-b228-4c85-8eed-8d5cc92ca1d2",
+      "space": "control-space-ext-97d1523b-f07c-4dba-9d66-77c10d76481e",
+      "directives": [
+        {
+          "was": "b49bbe5c-7755-4545-b8fe-4ff0e756c0a2",
+          "category": "premise",
+          "name": "Sage — Wity Thinking Assistant",
+          "source": "listing 17 Oct (unchanged since its creation)",
+          "file": "sage-1-premise-b49bbe5c.md",
+          "chars": 98
+        },
+        {
+          "was": "abf01be0-8466-49b5-8096-db0c86f12b63",
+          "category": "premise",
+          "name": null,
+          "source": "listing 17 Oct; 917 characters on 27 Oct (sage-check)",
+          "file": "sage-2-premise-abf01be0.md",
+          "chars": 917
+        },
+        {
+          "was": "2837ee85-fb75-4af9-955a-f921493c3ce0",
+          "category": "premise",
+          "name": null,
+          "source": "listing 17 Oct; 2065 characters on 27 Oct (sage-check)",
+          "file": "sage-3-premise-2837ee85.md",
+          "chars": 2065
+        },
+        {
+          "was": "c55ccf3b-d60e-4b79-a5eb-8da44b8283f0",
+          "category": "evidence",
+          "name": null,
+          "source": "read 27 Oct (live-sage.txt)",
+          "file": "sage-4-evidence-c55ccf3b.md",
+          "chars": 12076
+        },
+        {
+          "was": "5eb8db09-be90-4840-bc59-5d61638760e9",
+          "category": "premise",
+          "generated": "npm run gen:dial -- sage",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "maya": {
+      "exists": "6ed96461-488d-4961-8867-762c6234a52a",
+      "space": "control-space-ext-94f09a24-5877-4032-a596-e4d644316973",
+      "directives": [
+        {
+          "was": "0e9329e1-fca3-4263-9c58-8b8d671951e1",
+          "category": "premise",
+          "name": "Jity Design Studio",
+          "source": "update 17 Oct (= maya-premise-new.txt)",
+          "file": "maya-1-premise-0e9329e1.md",
+          "chars": 2517
+        },
+        {
+          "was": "9e8fe208-7f4c-4c84-87eb-4ab6cd52a190",
+          "category": "evidence",
+          "name": null,
+          "source": "listing 27 Oct",
+          "file": "maya-2-evidence-9e8fe208.md",
+          "chars": 10232
+        },
+        {
+          "was": "61b3bf76-7478-44f6-b20c-983b471d4cc8",
+          "category": "evidence",
+          "generated": "npm run gen:dial -- maya",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "lila": {
+      "exists": "8d309faf-1b1d-40ee-842a-7c03045602b6",
+      "space": "control-space-ext-df71636b-0475-4a59-9dd5-96f26b84844e",
+      "directives": [
+        {
+          "was": "eb578419-0e32-481a-a324-6d845ddd292c",
+          "category": "premise",
+          "name": "Lila Creative Assistant Jity Video Studio",
+          "source": "read 27 Oct + its SOUND AND MUSIC section (27 Oct, read back)",
+          "file": "lila-1-premise-eb578419.md",
+          "chars": 3089
+        },
+        {
+          "was": "420d846d-fb99-4800-b1e2-e230b91852a4",
+          "category": "evidence",
+          "name": null,
+          "source": "read 27 Oct (= listing 27 Oct)",
+          "file": "lila-2-evidence-420d846d.md",
+          "chars": 9876
+        },
+        {
+          "was": "dd9b5ceb-b7a9-402c-8b8b-4a186beb12a6",
+          "category": "evidence",
+          "generated": "npm run gen:dial -- lila",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "tara": {
+      "record": {
+        "name": "Tara - Agents Assistant @ Wity",
+        "title": "AI assistant that builds agents and runs them — now or on a schedule",
+        "description": "Tara builds Wity agents (their steps, start form, publishing), runs them and sets them running on a schedule — saying first what runs cost at the least, starting with the person's yes — and makes and changes assistants. Acts with @wity-ai/automation's actions through DIAL.",
+        "card": "https://ugc.wity.ai/transformed/1792618243748.webp",
+        "avatar": {
+          "dark": "https://ugc.wity.ai/transformed/1792618243748.webp",
+          "light": "https://ugc.wity.ai/transformed/1792618243748.webp"
+        },
+        "view": {
+          "dial": true
+        }
+      },
+      "privacy": "public",
+      "was": {
+        "puid": "fdad22c5-0914-4d5c-994e-1864389d4c27",
+        "slug": "tara-agents-assistant-wity-fdad22c5",
+        "space": "control-space-ext-c2ccfbc1-69ba-4b37-b74c-b769e9d303f7"
+      },
+      "directives": [
+        {
+          "was": "39c72fcd-df2f-4e6f-95a4-b9b816579c0b",
+          "category": "premise",
+          "name": "Tara - Agents Assistant @ Wity",
+          "source": "27 Oct: as read, with the model rule and the urn example (apply-fixes, read back)",
+          "file": "tara-1-premise-39c72fcd.md",
+          "chars": 4413
+        },
+        {
+          "was": "04d9397c-0d5f-4e3f-9af9-5c5ad45bc283",
+          "category": "evidence",
+          "name": null,
+          "source": "snapshot 22 Oct 15:35 + its five replacements of 22 Oct (read back then: 5955 characters)",
+          "file": "tara-2-evidence-04d9397c.md",
+          "chars": 5955
+        },
+        {
+          "was": "6df8a3eb-cd64-4a52-8332-9c5c9d43de9c",
+          "category": "evidence",
+          "generated": "npm run gen:dial -- tara",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "avvai": {
+      "record": {
+        "name": "Avvai - Publishing Assistant @ Jity",
+        "title": "AI assistant that publishes what you make — to your accounts and our channels",
+        "description": "Avvai publishes compiled posts to the person's integrations (LinkedIn, YouTube, Instagram, Ghost …) and their pages, shows compositions on our channels (Wity streams), and keeps the accounts working — checking the form a post takes before publishing, publishing only with the person's yes, one at a time. Acts with @wity-ai/publishing's actions through DIAL.",
+        "card": "https://ugc.wity.ai/transformed/1792617286626.webp",
+        "avatar": {
+          "dark": "https://ugc.wity.ai/transformed/1792617286626.webp",
+          "light": "https://ugc.wity.ai/transformed/1792617286626.webp"
+        },
+        "view": {
+          "dial": true
+        }
+      },
+      "privacy": "public",
+      "was": {
+        "puid": "6cd4b24c-ae9a-4165-9c03-99ae65792219",
+        "slug": "avvai-publishing-assistant-jity-6cd4b24c",
+        "space": "control-space-ext-106115a4-1c96-497c-948f-c3ac3ec228af"
+      },
+      "directives": [
+        {
+          "was": "aa2ea8ed-53eb-4c97-b737-d9ad9aa41e28",
+          "category": "premise",
+          "name": "Avvai - Publishing Assistant @ Jity",
+          "source": "update 20 Oct (with the channels changes)",
+          "file": "avvai-1-premise-aa2ea8ed.md",
+          "chars": 3918
+        },
+        {
+          "was": "a22eff97-de6b-474b-a0b5-597ac73a9a21",
+          "category": "evidence",
+          "name": null,
+          "source": "update 26 Oct",
+          "file": "avvai-2-evidence-a22eff97.md",
+          "chars": 7330
+        },
+        {
+          "was": "6ba19ee2-dea3-42cf-b3b3-d6a29ad73461",
+          "category": "evidence",
+          "generated": "npm run gen:dial -- avvai",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "gargi": {
+      "record": {
+        "name": "Gargi",
+        "title": "Your first stop at Wity: tell her what you want to do, and she brings in the assistant who does it",
+        "description": "Gargi understands what you want to do and brings in the Wity assistant for it: Sage to think it through, Maya to design it, Lila to tell it in video.",
+        "card": "https://ugc.wity.ai/transformed/1792614938857.webp",
+        "avatar": {
+          "dark": "https://ugc.wity.ai/transformed/1792614938857.webp",
+          "light": "https://ugc.wity.ai/transformed/1792614938857.webp"
+        },
+        "view": {
+          "dial": true
+        }
+      },
+      "privacy": "public",
+      "was": {
+        "puid": "6dfd0f24-0573-42bc-8a2b-885c87fdfbbd",
+        "slug": "gargi-6dfd0f24",
+        "space": "control-space-ext-52e19b7f-10f6-4f09-850c-4f79d368cd43"
+      },
+      "directives": [
+        {
+          "was": "f0de5c14-a03e-4b82-8b32-df3e0ee4f2bb",
+          "category": "premise",
+          "name": "Gargi",
+          "source": "listing 27 Oct",
+          "file": "gargi-1-premise-f0de5c14.md",
+          "chars": 1400
+        },
+        {
+          "was": "ea9193c0-2e8f-4e03-a655-b62a55603c09",
+          "category": "evidence",
+          "generated": "npm run gen:dial -- gargi",
+          "source": "@wity-ai/assistants gen:dial at its released versions"
+        }
+      ]
+    },
+    "vritti": {
+      "record": {
+        "name": "vritti",
+        "title": "Vritti",
+        "description": "The judge that benchmarks wity-decisions and related pipelines. Given a system, one decision case and what the engine did not see, Vritti says which option was right and what that judgement depends on — as one JSON verdict. Used by `npm run baseline-llm`; evaluation only, never on a request path."
+      },
+      "privacy": "private",
+      "was": {
+        "puid": "88d577c6-f4cb-4279-9f0e-5ee4c62bab3c",
+        "space": "control-space-ext-a585d560-a53b-4aaf-add4-ff61ab8facf2"
+      },
+      "directives": [
+        {
+          "was": "5a27af75-d7b9-4151-a6a4-911f023cfc44",
+          "category": "premise",
+          "name": "Vritti — decision judge",
+          "source": "listing 11 Oct",
+          "file": "vritti-1-premise-5a27af75.md",
+          "chars": 212
+        },
+        {
+          "was": "7fb2a1d3-3b6e-42b7-951f-97a402575c33",
+          "category": "premise",
+          "name": null,
+          "source": "update 11 Oct",
+          "file": "vritti-2-premise-7fb2a1d3.md",
+          "chars": 1095
+        },
+        {
+          "was": "4705c943-063d-4489-9727-b0dabe2f933e",
+          "category": "goal",
+          "name": null,
+          "source": "listing 11 Oct",
+          "file": "vritti-3-goal-4705c943.md",
+          "chars": 979
+        },
+        {
+          "was": "531cc269-eb0a-43f7-a0ed-9be41d9c0a70",
+          "category": "goal",
+          "name": null,
+          "source": "listing 11 Oct",
+          "file": "vritti-4-goal-531cc269.md",
+          "chars": 949
+        },
+        {
+          "was": "2a96e80e-b1cc-4d91-b174-527ce76033ae",
+          "category": "subtext",
+          "name": null,
+          "source": "listing 11 Oct",
+          "file": "vritti-5-subtext-2a96e80e.md",
+          "chars": 401
+        }
+      ]
+    }
+  },
+  "notRestored": {
+    "decision-copilot": {
+      "space": "control-space-ext-183e3ec3-ba9b-4914-9800-b37675766cd6",
+      "why": "no assistant uses it and nothing in code names it; its one working directive was deleted on 27 Sept when Sage's decision directive took its place",
+      "directives": [
+        {
+          "was": "9d575717-49bb-4dfa-bc93-1deb6003d415",
+          "category": "premise",
+          "name": "Decision Copilot",
+          "source": "space creation 27 Sept",
+          "file": "decision-copilot-1-premise-9d575717.md",
+          "chars": 383
+        }
+      ]
+    },
+    "lila-dev": {
+      "space": "control-space-ext-ba0404ec-9e44-4ffb-a515-cae0f2974505",
+      "why": "a test copy, archived 11 Oct with its directives deleted",
+      "directives": []
+    }
+  }
+}
