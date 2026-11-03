@@ -29,7 +29,7 @@ export default defineConfig({
     ['meta', { property: 'og:url',         content: 'https://www.wity.ai/stack/dial/' }],
     ['meta', { property: 'og:title',       content: 'DIAL — Dialectic Interagent Language by Wity AI' }],
     ['meta', { property: 'og:description', content: 'Open protocol for structured human-AI exchange. XML envelope encoding the pragmatic layer: what agents do in exchange, not just what they say. Superset of WUCE.' }],
-    ['meta', { property: 'og:image',       content: 'https://uploads.wity.ai/user-uploads/accounts_wity_ai/ai_image_editor_uploads/2026_04_20T16_47_32_984Z-wity-ai-og-images.png' }],
+    ['meta', { property: 'og:image',       content: 'https://uploads.wity.ai/user-uploads/accounts_wity_ai/landing_pages_recovery/2026_10_29T11_04_10_957Z-2026_04_20T16_47_32_984Z-wity-ai-og-images.png' }],
 
     // Twitter
     ['meta', { name: 'twitter:card',        content: 'summary_large_image' }],
@@ -37,7 +37,7 @@ export default defineConfig({
     ['meta', { name: 'twitter:url',         content: 'https://www.wity.ai/stack/dial/' }],
     ['meta', { name: 'twitter:title',       content: 'DIAL — Dialectic Interagent Language by Wity AI' }],
     ['meta', { name: 'twitter:description', content: 'Open protocol for structured human-AI exchange. XML envelope encoding the pragmatic layer: what agents do in exchange, not just what they say.' }],
-    ['meta', { name: 'twitter:image',       content: 'https://uploads.wity.ai/user-uploads/accounts_wity_ai/ai_image_editor_uploads/2026_04_20T16_47_32_984Z-wity-ai-og-images.png' }],
+    ['meta', { name: 'twitter:image',       content: 'https://uploads.wity.ai/user-uploads/accounts_wity_ai/landing_pages_recovery/2026_10_29T11_04_10_957Z-2026_04_20T16_47_32_984Z-wity-ai-og-images.png' }],
 
     // Additional meta
     ['meta', { name: 'author',   content: 'Wity AI' }],
