@@ -5,15 +5,17 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
-const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');   // wherever it is installed (a workspace hoists it)
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');   // this package, wherever the tests are run from
+const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');      // wherever it is installed (a workspace hoists it)
 
 // the shipped declarations are generated from the source (npm run types) — never written by hand; stale ones fail here
 test('types/ is what the source declares now (npm run types)', () => {
-    const out = fs.mkdtempSync(path.join(os.tmpdir(), 'wity-dial-change-types-'));
-    const args = JSON.parse(fs.readFileSync('package.json', 'utf8')).scripts.types.split(' ').slice(1).map((a, i, all) => (all[i - 1] === '--outDir' ? out : a));
-    execFileSync(process.execPath, [tsc, ...args], { stdio: 'pipe' });
+    const out = fs.mkdtempSync(path.join(os.tmpdir(), 'dial-change-types-'));
+    const args = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).scripts.types.split(' ').slice(1).map((a, i, all) => (all[i - 1] === '--outDir' ? out : a));
+    execFileSync(process.execPath, [tsc, ...args], { stdio: 'pipe', cwd: root });
     const list = (dir) => fs.readdirSync(dir, { recursive: true }).filter((f) => f.endsWith('.d.ts')).sort();
-    assert.deepEqual(list(out), list('types'), 'the same files');
-    for (const f of list(out)) assert.equal(fs.readFileSync(path.join('types', f), 'utf8'), fs.readFileSync(path.join(out, f), 'utf8'), `${f} is stale — npm run types`);
+    assert.deepEqual(list(out), list(path.join(root, 'types')), 'the same files');
+    for (const f of list(out)) assert.equal(fs.readFileSync(path.join(root, 'types', f), 'utf8'), fs.readFileSync(path.join(out, f), 'utf8'), `${f} is stale — npm run types`);
 });
