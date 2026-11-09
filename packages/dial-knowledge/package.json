@@ -13,6 +13,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@wity/graph-headless": "github:wity-ai/wity-graph-headless#v0.2.13"
+    "@wity/graph-headless": "npm:@wity-ai/graph-headless@0.4.1"
   }
 }
