@@ -1,120 +1,140 @@
-# Agents as DIAL: design note (2026-11-12, for the owner's review)
+# Agents as DIAL, and one board model (design note, 2026-11-12, for the owner's review)
 
-An agent's thinking is stored today as a **dialectics template** (`vritti-ideator-dialectics`, `DialecticsTemplate`),
-the oldest form in the lineage Dialectic Chain → WUCE → DIAL. DIAL is the language of performative exchange that the
-template was the first form of. Its README says it is a superset of WUCE, whose whole execution model lives inside
-`<dial-execute>`. This note maps the template onto DIAL and onto the agent record, and settles what each yield does in
-the composition, so that:
+DIAL is the model of performative exchange (lineage: Dialectic Chain → WUCE → DIAL; its README: a superset of WUCE,
+whose execution model lives inside `<dial-execute>`). An agent uses it to keep **its own reusable, evolvable blueprint
+of an exchange**. Aim: an agent's blueprint can lead to any outcome a session (person, assistant, or both) reaches on
+the thought layer and the composition layer — by the same acts, down the same paths.
 
-- an agent is **its settings + one DIAL exchange**;
-- the run interprets DIAL;
-- the template, its field translations and the WUCE paths are retired, with no agent lost.
+Nothing here is built yet. Revised the same day after the owner's review: `max`/`unit` replaced by `until`; roles
+added; `env` is the layer an act works on (`contemplate` is a board command, not an env); the board model (section 7).
 
-Nothing here is built yet.
+## 1. The layers, and who acts on them (as the code has it)
 
-## 1. What is stored today
+- **Thought layer** (vritti-ideator): a board (ChainOfThought) and its thoughts. A run starts here.
+- **Composition layer** (vritti-composer, scene-core, scene-authoring): a composition and its scene.
+- Observation is top-down: the composition layer observes the thought layer and reacts, never the reverse.
+- A session — an agent run, a person, an assistant, or a mix — acts across both. Its entry may differ (the composer's
+  board lifecycle, or a service), its acts go down the same operators: on a board, `cognitive-action-required`
+  (`operators/action-types/contemplate.js` for an agent; `services/board-developer.js:111` for a person, reached by
+  wity-mcp `board_operate_thought`); on a scene, the scene-authoring commands (studios, jity-mcp, the composer).
+- Today an agent can only act on the board (`contemplate`, `ask-human` — the only registered action types). What a
+  session made by scene commands (e.g. "Ollie and the Sleepy Stars": six pages of shapes, symbols and text, no
+  generated media; the Gargi trailer's titles, lines, vignette and shaders over its generated clips) no agent can make.
 
-**A step** (`DialecticStepSchema`):
+## 2. The primitives of a blueprint
 
-| Field | Meaning | Today's name at the edge (`@wity-ai/automation` DOCUMENTED_FIELD) |
+| Primitive | What it is | Today |
 |---|---|---|
-| `refName` | the step's name; also its execution counter key | `stepName` |
-| `_on` | the tag it waits for (scoped by `generateScopedQueryTag`) | `observe` |
-| `queryType` | what it does: `contemplate` or `ask-human`, the only two registered (`ActionTypeRegistry`) | `actionType` |
-| `query` | the prompt, or the question; `{{variables}}` filled in | `actionString` |
-| `tags` | what it yields: tags put on the thoughts it makes, or for ask-human the variable it fills | `yield` |
-| `maxExecutions` | how many times it may run (null: unlimited) | `maxExecutions` |
-| `displayMsg`, `unitizationType` | the message shown while it runs; how a reply is split into thoughts | the same |
-| `_for`, `_by`, `refGroup`, `queryTarget`, `queryFeedback`, `queryOpposition`, `queryPerspective`, `queryGraph`, `queryBelief` | older fields; **whether any stored agent uses them, and how, is to be counted** (section 6) | — |
+| **role** | who performs an act and who it is addressed to (author, reviewer, narrator…). Bound when a session starts: to a person, an agent or the system. One blueprint runs agentic, human or mixed unchanged | `_by` (default "system"); `addressed_to` in dial-core |
+| **act** | DIAL's eight: inform, ask, suggest, declare, execute, acknowledge, delegate, phatic | contemplate (an execute), ask-human (an ask) |
+| **observe** | when an act may be performed: what it responds to (its precondition) | `_on` |
+| **yield** | what it makes, which others may observe | `tags` |
+| **until** | its condition of satisfaction: performed again while what it observes recurs, until this holds (a count of its yields, an acceptance, a declared fact) | `maxExecutions` is one case: `until: count(yield) ≥ n` |
+| **env** | the layer or system an execute step acts on: `board`, `scene`, `mcp:<server>` | — (the action-type registry) |
+| **command** | the operation within that env, with its arguments: the env's own command vocabulary | `queryType` + `query` |
 
-**The agent** (the rest of `DialecticsTemplate`):
-- identity and presentation: `puid`, `displayName`, `objective`, `description`, `symbol`, `poster`, `identity`, `launchPageConfig`, `startForm`, `autoStart`, `autoSeedCentralIdea`;
-- what it makes: `outcomeFormat`, `outcomeLabel`, `outcomeDescription`, `outcomeBlurb`, `outcomePoster`, `outcomeContains`, `outcomeKeywords`;
-- the exchange's data: `variables`, `yields` (the yields chosen for the composition: the agent builder's yield selector), `yieldMap` (a yield → the model that makes it);
-- owner, sharing, publishing and versioning: `creator*`, `privacy`, `sharingSettings`, `isPublished`, `version`, `status`, `forkedFrom`, `pubKey`, `slug`, `tags`, `meta`, `usageStats`, `teleologiCategory`, `fsm_abstraction`, `ontology_abstraction`, `_type`.
+Blueprints compose by yield/observe (one's yield is another's trigger) and by `delegate` (an act handed to another
+role or another blueprint).
 
-## 2. The model: an agent = settings + one DIAL exchange
+## 3. Today's template, mapped
 
-The steps become **one DIAL document** (`<dial>`), kept on the agent as `exchange`, the one source of how the agent
-thinks. Everything that is not a speech act stays a field of the agent record, as now. The agent record and its owner,
-sharing and publishing do not move.
+| Template | DIAL |
+|---|---|
+| `contemplate` step | `<step env="board" command="contemplate" id observe yield until>intent</step>` in `<dial-execute>` |
+| `ask-human` step | `<dial-ask id observe yield addressed-to timeout>question</dial-ask>`; the answer is declared into the variable. Broken today (questions not stored, `addNewClarification` an empty stub): fixed by this |
+| `maxExecutions` | `until` |
+| `displayMsg` | the step's `label` |
+| `unitizationType` | an argument of the `contemplate` command (how its reply becomes thoughts): the board's, not DIAL's |
+| `variables`, `{{name}}` | `<dial-declare context-key>` at the head, filled from the start form |
+| `_by` | `role` |
 
-| Template | DIAL | Why |
-|---|---|---|
-| a `contemplate` step | `<dial-execute>` with one `<step env="contemplate" id="<refName>" observe="<_on>" yield="<tags…>">query</step>` | thinking is an action the run carries out on what it observes: an execute step, in DIAL's own observe/yield graph |
-| an `ask-human` step | `<dial-ask id="<refName>" observe="<_on>" yield="<variable>" response-type="text">question</dial-ask>` (timeout: the creator's expiry, see below) | asking a person is DIAL's ask |
-| `maxExecutions` | an attribute on the step (`max`): **an addition to DIAL** | DIAL has no repeat limit; WUCE-on-a-board needs one |
-| `displayMsg` | the step's `label` | DIAL already has it |
-| `unitizationType` | an attribute on the step (`unit`): **an addition** | how a reply becomes thoughts is the board's, said per step |
-| `variables`, `{{name}}` | `<dial-declare context-key="name">` at the head of the exchange, values from the start form | declared context is DIAL's |
+The agent record keeps everything that is not a speech act (identity, format, poster, privacy, sharing, publishing,
+versioning, `yieldMap` with each yield's model); the steps become one `exchange` (`<dial>`).
 
-Execution environments: `env="contemplate"` (the prompt executor) and, later, `env="mcp:<server>"`
-(`notes/dial-and-mcp.md`) **replace the action-type registry**: one way to say what a step does, in the language.
+**Entry, to be checked:** an agent's `contemplate` emits the event directly; a person's goes through
+`board-developer` with `assertCanChangeBoard` and `requirePersonCanPay`. An agent's act should go through the same
+service as a person's, so permission and payment hold alike — what an agent run does about them today is to be read
+before building, not assumed.
 
-**ask-human** (broken today: questions are not stored, `addNewClarification` is an empty stub) becomes a real
-`dial-ask`. The run records it as asked, the person answers on the board, and the answer is declared and fills the
-variable. The creator sets `timeout`. When it expires, the run takes the step's default (`<dial-option default>`) or
-fails it, by name. Until this lands, ask-human never blocks a run, as now.
+## 4. What each yield does in the composition
 
-## 3. What each yield does in the composition (settled here, not by format)
+`yieldMap` entry gains `role`: `content` (placed in the scene), `title`, `post` (caption, poll, blurb, gated preview —
+the composition's words for publishing), `thinking` (board only). A conversion gives existing agents the roles that
+reproduce what they do now (media → content; post tags → post; `composition-title` → title; unticked → thinking; other
+words → content only where their module showed them, read by a dry run; the owner reviews before `--apply`).
 
-Today, which thoughts reach the page is decided by a module template over `tagsRendered` (from `yields`). With modules
-retired, the author says it once, per yield, on the agent: a **`yieldMap` entry gains `role`**. `yieldMap` already
-holds per-yield settings (its model), so the role goes beside them rather than into a second map:
+Open: whether this stays a separate concept or becomes the composer's own blueprint — the thought → scene derivation
+written as acts observing the board (env `scene`). To decide when the composer's placement is next touched.
 
-| `role` | What the composer does with a thought of that yield | Today's equivalent |
-|---|---|---|
-| `content` | placed in the scene: media as now; words as a text element (on its parent's page, under its image) or into an open text slot | the module drew it |
-| `title` | the composition's title text, on its first page | `composition-title` |
-| `post` | kept as the composition's words for publishing (caption, poll, blurb, gated preview); never on the page | `post-commentary`, `poll-*`, `composition-blurb`, `composition-description`, `gated-text-preview` |
-| `thinking` | kept on the board only | `no-render`, or a yield unticked in the yield selector |
+## 5. Order of work (each step checked before the next)
 
-**No regression for existing agents.** A one-off conversion gives each existing agent's yields the role that reproduces
-what it does now:
-- media yields → `content`;
-- the post-word tags → `post`;
-- `composition-title` → `title`;
-- yields unticked in the yield selector → `thinking`;
-- **the remaining word yields → `content` only where the agent's module showed them as body text, else `thinking`**.
+1. dial-core: `until`, `role`, `env`/`command` on a step; serializer template ↔ `<dial>`, tested.
+2. Conversion check, read-only: every stored agent round-trips; replay (prompt executor mocked) makes the same thoughts
+   and tags (`@wity-ai/automation` replay design, `notes/design-2026-10-27-replay.md`).
+3. `exchange` stored beside `dialectics` (migration by hand: dry run, `--apply`, `--rollback`); writers write both.
+4. The run reads `exchange`, its board acts through the board's service; compared live on a few agents first.
+5. `env="scene"`: an agent's execute steps run scene-authoring commands, as jity-mcp does.
+6. Yield roles (section 4).
+7. Retire: `dialectics`, `DOCUMENTED_FIELD`/`STORED_FIELD`, the action-type registry, wity-cli's WUCE fallback; then
+   `tagsRendered`, modules, `rendered`, `sceneAuthored` — each after a prod count shows nothing reads it.
 
-The last rule is read from the module the agent's compositions used, by a dry run. The owner reviews the per-agent list
-before `--apply`. Once roles exist, the PDF transition (`sceneAuthored` + `rendered`) can go: the words are in the scene.
+## 6. To count before building (prod, read-only)
 
-## 4. How the run changes (vritti-ideator)
+- Which older step fields (`_for`, `refGroup`, `queryTarget`, `queryFeedback`, `queryOpposition`, `queryPerspective`,
+  `queryGraph`, `queryBelief`) any agent sets, and whether the run reads them. Unused → dropped.
+- `unitizationType` values in use; `_by` values in use.
+- How `generateScopedQueryTag` scopes an observed tag, so `observe` keeps its meaning.
 
-- `DialecticsInstance` reads the agent's `exchange` (parsed by dial-core), not `dialectics`. It runs the observe/yield
-  graph exactly as today: a step whose `observe` tag appears on a new thought runs, at most `max` times, and its output
-  is unitised into thoughts tagged with its `yield`.
-- The board, its thoughts, the run status (`agent-run-status`) and the composer's placement are unchanged.
+## 7. One board model: thoughtmap and thoughtbook
 
-## 5. Order of work, each step checked before the next
+Both are typed knowledge graphs on the same record (ChainOfThought); only the engine's view differs.
 
-1. **dial-core / @wity.ai/dial:** `max` and `unit` on a step; `env="contemplate"`; a step's `yield` list (exists).
-   A serializer from steps to `<dial>` and back, tested.
-2. **Conversion check (read-only):** convert every stored agent and compare both ways (template → DIAL → template is
-   identical in every field that is used), plus a **replay**: run each published agent's exchange against recorded
-   seeds with the prompt executor mocked, both ways, and compare the thoughts made and their tags.
-   `@wity-ai/automation` has a replay design (`notes/design-2026-10-27-replay.md`) to build on.
-3. **Store `exchange` beside `dialectics`:** migration by hand (dry run, `--apply`, `--rollback`). The agent builder
-   and `@wity-ai/automation` write both, from one function, while 4 is checked.
-4. **The run reads `exchange`.** Compare live runs on a few agents before switching all.
-5. **Yield roles** (section 3): conversion dry run, the owner's review, `--apply`. Then the composer places by role
-   (scene-authoring text placement and slots, step 5.9), and Ghost HTML and PDF come from the scene.
-6. **Retire:**
-   - `dialectics` (the step schema);
-   - `DOCUMENTED_FIELD` / `STORED_FIELD` (the translation between stored and documented names);
-   - the action-type registry;
-   - wity-cli's WUCE fallback;
-   - `tagsRendered`, the modules, `rendered`, `sceneAuthored` (step 6 of the composition plan).
+### Audit (2026-11-12, read-only)
 
-   Each after a prod dry-run count shows nothing still reads it.
+**Thoughtbook — one XML document on the board.**
+- Stored: `ChainOfThought.knowledgeGraph` (`<wity-knowledge>`) + `knowledgeGraphRev`.
+- One guarded writer: ideator `services/knowledge-graph-service.js` (compare-and-set on the rev, announces each
+  write). Created by `board-admin.js` (a new board's document), copied by `operators/board-remix.js`; read by
+  `operators/board-kernels.js` (decision binding).
+- Edited through `@wity-ai/authoring` commands by wity-app (11 files: rkf, system, workbook, matrix, ideation
+  workspace pages, assistant `stored-board-domain.js`, editors), wity-mcp `tools/boards.ts`, wity-cli
+  (`WorkServices.ts`, `assistant/boardDomain.ts`).
+- Also read by: wity-notebook-viewer (4), decisions-eval `board.js`, vritti-knowledge ingestion, the video studio's
+  attached script (`attachedScript.ts`), vritti-ideator-decisions migrations, wity-system baseline.
+- The engine (dialectics, occurrents, composer) sees none of it.
 
-## 6. To verify before building (not assumed)
+**Thoughtmap — one Thought per node, layout and links in a side record.**
+- `Thought` (meaning: title, content, tags, intent, cause, taxonomy, semantic maps…).
+- `VectorProp` via `graphProps` (x, y, w, h, map size, order/indices **and `links: Mixed[]`**) — written together by
+  ideator `thought-developer.js updateThoughtVectorGraphProps` (keys idx, x, y, w, h, links), created by
+  `operators/manage-chain-of-thought.js`. **Meaning (links) is stored and written with position.**
+- `StyleProp` via `styleProps` (fill, stroke, opacity, fonts, className, styleString), its own update
+  (`cot-vector-update` style-update).
+- Links read into a graph by `@wity/ideation` `ideation-graph.js:225` **and, the same mapping again, by
+  wity-thought-player `thought-player-page.js:351`** — a duplication to remove whatever is decided.
+- Also: control-space-manager and file-manager define their own vector props (not the thoughtmap's; out of scope).
 
-- Which of the older step fields (`_for`, `_by`, `refGroup`, `queryTarget`, `queryFeedback`, `queryOpposition`,
-  `queryPerspective`, `queryGraph`, `queryBelief`) any stored agent sets, and whether the run reads them. Count them on
-  prod, read-only. A field nobody sets is dropped, not carried.
-- `unitizationType` values in use, and what each does.
-- The agent builder's `componentsInDialectics` and `template-renderer-preview`, which tie yields to module variables:
-  they go with the modules, and their yield-selection UI becomes the role picker.
-- How `generateScopedQueryTag` scopes an observed tag, so the DIAL `observe` keeps the same meaning.
+### Proposal
+- **One graph, decomposed:** a board's semantic units are records the engine sees — a thought per unit (a thoughtmap
+  node, a thoughtbook card/block), carrying its typed knowledge element; occurrents and DIAL `env="board"` acts work
+  on any of them. Thoughtmap and thoughtbook become presentations of one graph.
+- **An embed is one record holding its domain document** (system map, workbook, decisions, table): its parts are a
+  domain model with their own commands, not thoughts.
+- **Relations are records:** from, to, role (`causes`, `rkf:supports`…), properties — out of `VectorProp`, one link
+  model for both.
+- **Presentation separate from meaning:** position and style become a presentation over the graph (canvas, pages,
+  flip; rkf themes). Today's thoughtmap look becomes one presentation; `StyleProp`/`VectorProp` fold into it.
+
+### Must hold (no regression)
+- An edit of several steps lands whole or not at all, as one compare-and-set does today: a board revision over its
+  records (transaction, or the same guard).
+- Exact round-trip: the records rebuild the identical `<wity-knowledge>`; every thoughtbook opens unchanged; every
+  reader above keeps working (or reads through one function).
+- Thoughtbook units becoming visible to the engine starts nothing by itself: whether a thoughtbook produces a
+  composition is a decision.
+- Large boards: read/write cost measured before switching.
+
+### Order
+After DIAL steps 1–2: the board model and its exact round-trip (tested on every stored thoughtbook, read-only) →
+relations out of `VectorProp` → thoughtbooks migrated (by hand) → the thoughtmap as a presentation → readers moved to
+one function, then the XML field retired.
