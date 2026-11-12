@@ -179,3 +179,22 @@ does with them: to read before converting).
 ### Order
 In DIAL step 1 the unit is part of the step model (default unit = today's rule, `one`); the lossless, schema-asked
 unitizer is a runtime change, built and replay-tested after the conversion is proven (after step 4).
+
+## 9. Status (2026-11-12, evening)
+
+Built and released:
+- **DIAL 0.2.2** (dial-core, dial-core-wasm, -web, @wity-ai/dial): `by`, `until` (`runs >= N`, `conditionOf`),
+  `unit` on every act; `action` on a step; `context-key` on an ask; `serialize` (parse reads it back the same); any
+  words carried exactly (entities, either quote, a `>` in a value). Variables stay the agent's start form (not
+  declared in the exchange): they are a session's inputs, bound when it starts, as roles are.
+- **@wity-ai/automation 0.4.0** `/exchange`: `exchangeOf(steps)`, `actsOf(exchange)`, `stepsOf(exchange)`.
+  Checked on every stored agent (183) and run (1,509): what a run reads is the same for all 11,709 steps.
+- **vritti-ideator-dialectics** (deployed, pm2 38): an agent's `exchange` written on every save; a step edit keeps
+  the fields it does not change (it used to lose them); migration 005.
+- **vritti-ideator** (on the server, not restarted): a run performs its exchange's acts through performers (the
+  action-type registry gone); the price of a run reads the same acts; migration 2026-11-run-exchange.
+  `tests/run-acts.test.js` replays every kind of stored step.
+
+To finish the switch, in order (on the server): migration 005 `--apply` (vritti-ideator-dialectics), then
+`migrate:run-exchange -- --apply` (vritti-ideator), then restart vritti-ideator. Then: the builder and
+@wity-ai/automation edit the exchange itself; `env="scene"` performers; yield roles; retiring the steps.
