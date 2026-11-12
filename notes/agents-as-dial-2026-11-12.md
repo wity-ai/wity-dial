@@ -36,6 +36,13 @@ added; `env` is the layer an act works on (`contemplate` is a board command, not
 Blueprints compose by yield/observe (one's yield is another's trigger) and by `delegate` (an act handed to another
 role or another blueprint).
 
+**Two axes, not one list of action types.** Today's registry (`contemplate`, `ask-human`) mixes them:
+- *the act*: what kind of performative — `ask-human` is an **ask** addressed to a role, not an action beside
+  contemplate; inform, suggest, delegate, declare become possible the same way;
+- *for an execute act, env + command*: `board` (contemplate, add, link, delete…: the board's commands), `scene` (the
+  scene-authoring commands), `mcp:<server>` (a tool). Each env brings the command vocabulary people and assistants
+  already use through its service and MCP — no second list; the action-type registry goes.
+
 ## 3. Today's template, mapped
 
 | Template | DIAL |
@@ -44,7 +51,7 @@ role or another blueprint).
 | `ask-human` step | `<dial-ask id observe yield addressed-to timeout>question</dial-ask>`; the answer is declared into the variable. Broken today (questions not stored, `addNewClarification` an empty stub): fixed by this |
 | `maxExecutions` | `until` |
 | `displayMsg` | the step's `label` |
-| `unitizationType` | an argument of the `contemplate` command (how its reply becomes thoughts): the board's, not DIAL's |
+| `unitizationType` | the yield's **unit** (section 8): the 999 steps without it → the named default unit (today's rule); the 6 `treat-single` → `one` — see section 8 for what they do today |
 | `variables`, `{{name}}` | `<dial-declare context-key>` at the head, filled from the start form |
 | `_by` | `role` |
 
@@ -138,3 +145,37 @@ Both are typed knowledge graphs on the same record (ChainOfThought); only the en
 After DIAL steps 1–2: the board model and its exact round-trip (tested on every stored thoughtbook, read-only) →
 relations out of `VectorProp` → thoughtbooks migrated (by hand) → the thoughtmap as a presentation → readers moved to
 one function, then the XML field retired.
+
+## 8. Unitization: an act's output segmented into units of meaning
+
+Counted on prod (2026-11-12, read-only): 164 live agents (57 published), 93 with steps, 1,005 steps. The eight older
+step fields are set by none (dropped). `_by` is `system` on every step. `maxExecutions` set on 10 steps.
+`unitizationType` set on 6 steps in 2 agents (`treat-single`). `queryType` empty on 5 steps in 1 agent (what the run
+does with them: to read before converting).
+
+### Today (vritti-ideator `operators/gpt-response-parser.js`)
+- The prompt executor's reply is normalised for every model (`{ choices[].message.content, usage, answeredBy }`,
+  vritti-prompt-executor `execute-prompt.js`); the parser reads it as JSON: each item a thought — unless its
+  description holds a bullet list, then each bullet a thought and the item's other fields dropped.
+- Not JSON: only lines starting `-`, `•`, `*` are kept; the rest of the reply is lost; none → nothing made, a warning.
+- `treat-single` is checked on each item of the model's reply (`_item.unitizationType`). The step's setting reaches
+  `vector.unitizationType` (`lifecycles/cognitive-processes.js:82`), which `parseMsgReceivedFromGpt` does not pass to
+  the parser, and the prompt executor never reads it — **so the step's setting has no effect today**; a converted
+  `treat-single` step must keep today's behaviour until the owner decides otherwise.
+- The name ("gpt") says where text once came from, not what it does; the same in its functions.
+
+### The model
+- **The unit is the yield's**, not the command's: a yield declares what one unit is (a thought; a card with blocks; a
+  typed knowledge element — claim, step, option, question), how many, and the relations between siblings (supports,
+  follows). It applies to any act's output — a contemplation's reply, a person's answer, a tool's result.
+- **Lossless by construction:** the whole output is kept (`Thought.rawContent` exists), each unit records the span it
+  came from; the units can always be derived again; nothing is dropped silently.
+- **Asked for in its shape:** the model is given the unit's schema (structured output), rather than its reply guessed
+  at by bullets and regexes.
+- **Code:** `operators/unitize.js`, `unitsOf(output, unit)` → units with their spans — replacing the parser, its
+  contents and its name together, its tests pinning today's default first. Other "GPT" names in the ideator go in the
+  ideator naming pass.
+
+### Order
+In DIAL step 1 the unit is part of the step model (default unit = today's rule, `one`); the lossless, schema-asked
+unitizer is a runtime change, built and replay-tested after the conversion is proven (after step 4).
