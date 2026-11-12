@@ -9,6 +9,8 @@ export interface DialAttributes {
 
 export interface DialStepNode {
   env: string;
+  /** The operation within its env (a board's `contemplate`, a scene command…). */
+  action?: string | null;
   id?: string | null;
   label?: string | null;
   observe?: string | null;
@@ -28,6 +30,12 @@ export interface DialElementNode {
   observe?: string | null;
   yield?: string[] | null;
   addressedTo?: string | null;
+  /** The role that performs the act; none: the system. */
+  by?: string | null;
+  /** Its condition of satisfaction (conditionOf reads it); none: every time. */
+  until?: string | null;
+  /** What one unit of its yield is; none: the receiver's default. */
+  unit?: string | null;
   // dial-inform
   render?: string;
   text?: string | null;
@@ -40,7 +48,7 @@ export interface DialElementNode {
   steps?: DialStepNode[];
   // dial-suggest (`text` is its human-readable proposal)
   action?: string | null;
-  // dial-declare
+  // dial-declare; dial-ask: where its answer is declared
   contextKey?: string | null;
   // dial-acknowledge
   of?: string | null;
@@ -105,6 +113,14 @@ export function runStepGraph(
 // Node.js build — synchronous
 export function parse(text: string): DialEnvelope | null;
 export function extractProse(text: string): string;
+export function serialize(envelope: DialEnvelope | Omit<DialEnvelope, 'raw'>): string;
+export function conditionOf(until: string): DialCondition;
+
+/** An act's condition of satisfaction: done once performed `atLeast` times. */
+export interface DialCondition {
+  kind: 'runs';
+  atLeast: number;
+}
 
 // Browser build (index.browser.js) — async; WASM loaded via fetch on first call
 // These replace the synchronous signatures above when the browser condition is resolved.

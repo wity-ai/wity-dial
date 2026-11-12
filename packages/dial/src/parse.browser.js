@@ -7,7 +7,7 @@
 // initialisation (a one-time fetch) can be awaited lazily on first call.
 // Subsequent calls return immediately — the init promise is cached.
 
-import init, { dial_parse, dial_extract_prose } from 'dial-core-wasm-web';
+import init, { dial_parse, dial_extract_prose, dial_serialize, dial_condition } from 'dial-core-wasm-web';
 
 let _ready = null;
 
@@ -50,4 +50,27 @@ export async function parse(text) {
 export async function extractProse(text) {
   await _ensureInit();
   return dial_extract_prose(text);
+}
+
+/**
+ * An envelope written as DIAL text — what parse reads back to the same envelope (its `raw` aside). One canonical form;
+ * any words carried exactly.
+ *
+ * @param {import('../index.js').DialEnvelope | Omit<import('../index.js').DialEnvelope, 'raw'>} envelope
+ * @returns {Promise<string>}
+ */
+export async function serialize(envelope) {
+  await _ensureInit();
+  return dial_serialize(JSON.stringify(envelope));
+}
+
+/**
+ * An `until` read: its condition ({ kind: 'runs', atLeast }) — or an Error saying why it is not one.
+ *
+ * @param {string} text
+ * @returns {Promise<import('../index.js').DialCondition>}
+ */
+export async function conditionOf(text) {
+  await _ensureInit();
+  try { return JSON.parse(dial_condition(text)); } catch (e) { throw new Error(String(e?.message ?? e)); }
 }

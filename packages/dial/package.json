@@ -1,20 +1,27 @@
 {
   "name": "@wity.ai/dial",
-  "version": "0.1.0",
-  "description": "DIAL protocol — JS layer over dial-core WASM. Exposes parse, DialSession, and DialRouter.",
+  "version": "0.2.2",
+  "description": "DIAL protocol \u2014 JS layer over dial-core WASM. Exposes parse, DialSession, and DialRouter.",
   "type": "module",
   "main": "./index.cjs",
   "types": "./index.d.ts",
   "exports": {
     ".": {
       "browser": "./index.browser.js",
-      "node":    "./index.js",
-      "import":  "./index.js",
+      "node": "./index.js",
+      "import": "./index.js",
       "require": "./index.cjs",
-      "types":   "./index.d.ts"
+      "types": "./index.d.ts"
     }
   },
-  "keywords": ["dial", "protocol", "parser", "router", "wasm", "wity"],
+  "keywords": [
+    "dial",
+    "protocol",
+    "parser",
+    "router",
+    "wasm",
+    "wity"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -25,8 +32,14 @@
     "access": "public"
   },
   "dependencies": {
-    "dial-core-wasm":     "file:../dial-core-wasm/pkg-node",
+    "dial-core-wasm": "file:../dial-core-wasm/pkg-node",
     "dial-core-wasm-web": "file:../dial-core-wasm/pkg-web"
   },
-  "bundleDependencies": ["dial-core-wasm", "dial-core-wasm-web"]
+  "bundleDependencies": [
+    "dial-core-wasm",
+    "dial-core-wasm-web"
+  ],
+  "scripts": {
+    "test": "node --test test/"
+  }
 }

@@ -4,7 +4,7 @@
  */
 'use strict';
 
-const { parse, extractProse } = require('./src/parse.cjs');
+const { parse, extractProse, serialize, conditionOf } = require('./src/parse.cjs');
 
 class DialSession {
   #declared = {};
@@ -86,4 +86,4 @@ async function runStepGraph(steps, executor, initialYielded = new Set()) {
   return { results, yielded };
 }
 
-module.exports = { parse, extractProse, DialSession, DialRouter, runStepGraph };
+module.exports = { parse, extractProse, serialize, conditionOf, DialSession, DialRouter, runStepGraph };

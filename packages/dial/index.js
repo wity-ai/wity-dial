@@ -5,6 +5,8 @@
  *
  *   parse(text)          — extract + parse <dial> envelope from AI response text
  *   extractProse(text)   — return prose portions (text outside any <dial> block)
+ *   serialize(envelope)  — an envelope written as DIAL text (parse reads it back the same)
+ *   conditionOf(until)   — an act's `until` read as its condition, or an Error
  *
  *   DialSession          — per-session context: declared facts + rolling execution results
  *   DialRouter           — handler-based element dispatcher with observe/yield dependency graph
@@ -33,6 +35,6 @@
  *   import { KnowledgeStore, FileAdapter } from '@wity/dial-knowledge';
  */
 
-export { parse, extractProse }           from './src/parse.js';
+export { parse, extractProse, serialize, conditionOf } from './src/parse.js';
 export { DialSession }                   from './src/DialSession.js';
 export { DialRouter, runStepGraph }      from './src/DialRouter.js';

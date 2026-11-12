@@ -11,6 +11,9 @@ pub struct DialAttributes {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DialStep {
     pub env: String,
+    /// The operation within its env (a board's `contemplate`, a scene command…) — the same name a person's or an
+    /// assistant's request gives it (dial-suggest `action`). None: the env's own reading of `command` (a shell line).
+    pub action: Option<String>,
     pub id: Option<String>,
     pub label: Option<String>,
     pub observe: Option<String>,
@@ -95,6 +98,15 @@ pub struct ElementBase {
     #[serde(rename = "yield")]
     pub r#yield: Option<Vec<String>>,
     pub addressed_to: Option<String>,
+    /// The role that performs the act (bound to a person, an agent or the system when a session starts). None: the
+    /// system.
+    pub by: Option<String>,
+    /// Its condition of satisfaction: performed again while what it observes recurs, until this holds
+    /// (`condition::Condition`). None: every time.
+    pub until: Option<String>,
+    /// What one unit of its yield is — how its output is segmented into units of meaning. None: the receiver's
+    /// default.
+    pub unit: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -111,6 +123,8 @@ pub struct DialInform {
 pub struct DialAsk {
     #[serde(flatten)]
     pub base: ElementBase,
+    /// Where the answer is declared (as dial-declare's context-key): the name later acts read it by.
+    pub context_key: Option<String>,
     pub response_type: String,
     pub timeout: Option<u32>,
     pub text: Option<String>,

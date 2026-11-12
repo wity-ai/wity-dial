@@ -27,7 +27,12 @@ All DIAL elements share this base set:
 | `observe` | string | — | Event or condition required before this element activates; empty = activates immediately |
 | `yield` | string | — | Space-separated event names emitted when this element is resolved |
 | `addressed-to` | string | — | Target actor id; omit = broadcast to all participants |
+| `by` | string | system | The role that performs the act. A blueprint names roles (`author`, `reviewer`, `initiator`…); each is bound to a person, an agent or the system when a session starts, so one blueprint runs agentic, human or mixed unchanged |
+| `until` | condition | — | The act's condition of satisfaction: performed again, while what it observes recurs, until it holds. `runs >= N`: done once performed N times. Any other text is refused, never read as "no condition" |
+| `unit` | string | receiver's default | What one unit of the act's yield is — how its output (a reply, an answer, a tool's result) is segmented into units of meaning |
 | `lang` | string | `"en"` | BCP-47 language tag for natural language content |
+
+Writing DIAL: words and attribute values carry any text — `&amp;`, `&lt;`, `&gt;`, `&quot;`, `&apos;` and numeric references are read back to their characters; a value may hold the other kind of quote (`label="Ollie's"`) and a `>` (`until="runs >= 3"`). `serialize` (`@wity.ai/dial`) writes an envelope that `parse` reads back the same.
 
 The `observe`/`yield` model is inherited directly from WUCE. Within a single envelope, elements with no `observe` activate in parallel; elements with `observe` wait for the named yield from another element.
 
@@ -103,6 +108,7 @@ An interrogative. Requests something from the receiver. The exchange is gated �
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
+| `context-key` | string | — | Where the answer is declared, as `<dial-declare context-key>` would: the name later acts read it by (`{{name}}`) |
 | `response-type` | enum | `text` | Shape of the expected response |
 | `timeout` | number | — | Seconds to wait before yielding a timeout event; omit = wait indefinitely |
 | *(base attributes)* | | | All common attributes apply |
@@ -174,7 +180,8 @@ An imperative. Executes a sequence of operations. Contains a WUCE-style observe/
 
 | Attribute | Type | Default | Description |
 |---|---|---|---|
-| `env` | string | `shell` | Runtime protocol. Determines which executor handles this step |
+| `env` | string | `shell` | Runtime protocol — the layer or system the step acts on. Determines which executor handles this step |
+| `action` | string | — | The operation within its env, by the name that env already gives it — the same as a `<dial-suggest action>` for it (a board's `contemplate`). Omit where the text is itself the command (`shell`) |
 | `id` | string | auto | Unique step identifier within this `<dial-execute>` |
 | `label` | string | — | Human-readable label for display (defaults to first line of command) |
 | `observe` | string | — | Step-level yield event to wait for before this step activates |
@@ -189,6 +196,8 @@ Step text content is the raw command passed directly to the executor. The AI ada
 | `shell` | POSIX bash — `exec(command)`. Works for any shell-accessible environment: local filesystem, SSH, Docker, etc. |
 | `python` | Python subprocess — `python3 -c "..."` or script file |
 | `http` | HTTP request — command text is a `curl`-style spec or JSON request descriptor |
+| `board` | A Wity board (its thoughts, its knowledge): `action` is one of the board's commands — the ones a person or an assistant runs; `contemplate` thinks about what was observed, the text its intent |
+| `scene` | A Jity composition's scene: `action` is a scene-authoring command, its arguments in a `<dial-payload>` |
 | *(extensible)* | Any new runtime registers its own executor by `env` key |
 
 ### Step sequencing

@@ -22,6 +22,6 @@
  *   });
  */
 
-export { parse, extractProse, initDial } from './src/parse.browser.js';
+export { parse, extractProse, serialize, conditionOf, initDial } from './src/parse.browser.js';
 export { DialSession }                   from './src/DialSession.js';
 export { DialRouter, runStepGraph }      from './src/DialRouter.js';

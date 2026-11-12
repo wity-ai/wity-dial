@@ -1,5 +1,6 @@
 use crate::types::*;
 use crate::error::DialError;
+use crate::escape::unescape;
 use regex::Regex;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -14,6 +15,8 @@ macro_rules! re {
     }};
 }
 
+// An open tag's attributes: anything up to its `>` — but a quoted value may hold a `>` (until="runs >= 3"), so a
+// quoted value is skipped whole.
 thread_local! {
     // an attribute's pattern, by its name — compiled once each (the names are the protocol's own, a handful)
     static ATTR_RES: RefCell<HashMap<String, Regex>> = RefCell::new(HashMap::new());
@@ -65,13 +68,13 @@ fn extract_dial_block(text: &str) -> Option<String> {
 fn bare_elements(text: &str) -> Option<(usize, usize)> {
     let open = re!(r"<dial-[\w]+[\s>/]");
     let start = open.find(text)?.start();
-    let ends = re!(r"</dial-[\w]+>|<dial-[\w]+[^>]*/>");
+    let ends = re!(r#"</dial-[\w]+>|<dial-[\w]+(?:[^>"']|"[^"]*"|'[^']*')*/>"#);
     let end = ends.find_iter(&text[start..]).map(|m| start + m.end()).last()?;
     Some((start, end))
 }
 
 fn parse_root_attributes(xml: &str) -> DialAttributes {
-    let open_tag_re = re!(r"<dial([^>]*)>");
+    let open_tag_re = re!(r#"<dial((?:[^>"']|"[^"]*"|'[^']*')*)>"#);
     let attrs_str = open_tag_re
         .captures(xml)
         .and_then(|c| c.get(1))
@@ -88,7 +91,7 @@ fn parse_root_attributes(xml: &str) -> DialAttributes {
 
 fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
     // Strip root <dial ...> and </dial>
-    let open_re = re!(r"^<dial[^>]*>");
+    let open_re = re!(r#"^<dial(?:[^>"']|"[^"]*"|'[^']*')*>"#);
     let inner = open_re.replace(xml, "");
     let inner = inner.trim_end_matches("</dial>").trim();
 
@@ -97,7 +100,7 @@ fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
     // Find each <dial-* opening (or self-closing) tag; no backreference needed.
     // Rust's regex crate does not support backreferences (\1), so we find the
     // matching closing tag manually using str::find after the opening tag.
-    let open_tag_re = re!(r"<(dial-[\w]+)([^>]*?)(/?>)");
+    let open_tag_re = re!(r#"<(dial-[\w]+)((?:[^>"']|"[^"]*"|'[^']*')*?)(/?>)"#);
     let mut search = inner;
 
     loop {
@@ -140,27 +143,30 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
         observe: attr(attrs, "observe"),
         r#yield: attr(attrs, "yield").map(|y| y.split_whitespace().map(String::from).collect()),
         addressed_to: attr(attrs, "addressed-to"),
+        by: attr(attrs, "by"),
+        until: attr(attrs, "until"),
+        unit: attr(attrs, "unit"),
     };
+    // an element's words, as written: its entities read back
+    let words = |s: &str| Some(unescape(s.trim())).filter(|s| !s.is_empty());
 
     let el = match tag {
         "dial-inform" => DialElement::Inform(DialInform {
             base,
             render: attr(attrs, "render").unwrap_or_else(|| "prose".into()),
-            text: Some(strip_payload_tags(inner).trim().to_string()).filter(|s| !s.is_empty()),
+            text: words(&strip_payload_tags(inner)),
             payload: parse_payload(inner),
         }),
 
         "dial-ask" => {
             let options = parse_options(inner);
-            let text_only = re!(r"(?s)<dial-option[\s\S]*?</dial-option>")
-                .replace_all(inner, "")
-                .trim()
-                .to_string();
+            let text_only = re!(r"(?s)<dial-option[\s\S]*?</dial-option>").replace_all(inner, "");
             DialElement::Ask(DialAsk {
                 base,
+                context_key: attr(attrs, "context-key"),
                 response_type: attr(attrs, "response-type").unwrap_or_else(|| "text".into()),
                 timeout: attr(attrs, "timeout").and_then(|v| v.parse().ok()),
-                text: Some(text_only).filter(|s| !s.is_empty()),
+                text: words(&text_only),
                 options,
             })
         }
@@ -174,28 +180,28 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
             base,
             render: attr(attrs, "render").unwrap_or_else(|| "card-list".into()),
             action: attr(attrs, "action"),
-            text: Some(strip_payload_tags(inner).trim().to_string()).filter(|s| !s.is_empty()),
+            text: words(&strip_payload_tags(inner)),
             payload: parse_payload(inner),
         }),
 
         "dial-declare" => DialElement::Declare(DialDeclare {
             base,
             context_key: attr(attrs, "context-key"),
-            text: Some(strip_payload_tags(inner).trim().to_string()).filter(|s| !s.is_empty()),
+            text: words(&strip_payload_tags(inner)),
             payload: parse_payload(inner),
         }),
 
         "dial-acknowledge" => DialElement::Acknowledge(DialAcknowledge {
             base,
             of: attr(attrs, "of"),
-            text: Some(inner.trim().to_string()).filter(|s| !s.is_empty()),
+            text: words(inner),
         }),
 
         "dial-delegate" => DialElement::Delegate(DialDelegate {
             base,
             to: attr(attrs, "to"),
             intent: attr(attrs, "intent"),
-            text: Some(inner.trim().to_string()).filter(|s| !s.is_empty()),
+            text: words(inner),
         }),
 
         "dial-phatic" => DialElement::Phatic(DialPhatic {
@@ -210,13 +216,14 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
 }
 
 fn parse_steps(inner: &str) -> Vec<DialStep> {
-    let re = re!(r"(?s)<step([^>]*)>([\s\S]*?)</step>");
+    let re = re!(r#"(?s)<step((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)</step>"#);
     re.captures_iter(inner)
         .map(|cap| {
             let attrs = &cap[1];
-            let command = cap[2].trim().to_string();
+            let command = unescape(cap[2].trim());
             DialStep {
                 env: attr(attrs, "env").unwrap_or_else(|| "shell".into()),
+                action: attr(attrs, "action"),
                 id: attr(attrs, "id"),
                 label: attr(attrs, "label"),
                 observe: attr(attrs, "observe"),
@@ -229,11 +236,11 @@ fn parse_steps(inner: &str) -> Vec<DialStep> {
 }
 
 fn parse_options(inner: &str) -> Vec<DialOption> {
-    let re = re!(r"(?s)<dial-option([^>]*)>([\s\S]*?)</dial-option>");
+    let re = re!(r#"(?s)<dial-option((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)</dial-option>"#);
     re.captures_iter(inner)
         .map(|cap| {
             let attrs = &cap[1];
-            let label = cap[2].trim().to_string();
+            let label = unescape(cap[2].trim());
             DialOption {
                 value: attr(attrs, "value").unwrap_or_else(|| label.clone()),
                 label,
@@ -247,7 +254,7 @@ fn parse_payload(inner: &str) -> Option<serde_json::Value> {
     let re = re!(r"(?s)<dial-payload[^>]*>([\s\S]*?)</dial-payload>");
     re.captures(inner)
         .and_then(|c| c.get(1))
-        .and_then(|m| serde_json::from_str(m.as_str().trim()).ok())
+        .and_then(|m| serde_json::from_str(&unescape(m.as_str().trim())).ok())
 }
 
 fn strip_payload_tags(inner: &str) -> String {
@@ -255,16 +262,17 @@ fn strip_payload_tags(inner: &str) -> String {
     re.replace_all(inner, "").to_string()
 }
 
-/// Parse a single attribute value from an attribute string.
+/// Parse a single attribute value from an attribute string — in either quotes (the other kind may be inside it:
+/// label="Ollie's"), its entities read back. The name stands alone: `id` is not read from `data-id`.
 pub fn attr(attrs: &str, name: &str) -> Option<String> {
     ATTR_RES.with(|cache| {
         let mut cache = cache.borrow_mut();
         let re = cache.entry(name.to_string()).or_insert_with(|| {
-            let pattern = format!(r#"{}=["']([^"']*)["']"#, regex::escape(name));
+            let pattern = format!(r#"(?:^|\s){}\s*=\s*(?:"([^"]*)"|'([^']*)')"#, regex::escape(name));
             Regex::new(&pattern).unwrap()
         });
         re.captures(attrs)
-            .and_then(|c| c.get(1))
-            .map(|m| m.as_str().to_string())
+            .and_then(|c| c.get(1).or_else(|| c.get(2)))
+            .map(|m| unescape(m.as_str()))
     })
 }

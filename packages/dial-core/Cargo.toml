@@ -1,6 +1,6 @@
 [package]
 name = "dial-core"
-version = "0.1.0"
+version = "0.2.2"
 edition = "2021"
 description = "DIAL (Dialectic Interagent Language) — core parser, types, and session context"
 license = "MIT"

@@ -8,7 +8,7 @@
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { dial_parse, dial_extract_prose } = require('dial-core-wasm');
+const { dial_parse, dial_extract_prose, dial_serialize, dial_condition } = require('dial-core-wasm');
 
 /**
  * Parse a <dial> envelope from AI response text.
@@ -33,4 +33,25 @@ export function parse(text) {
  */
 export function extractProse(text) {
   return dial_extract_prose(text);
+}
+
+/**
+ * An envelope written as DIAL text — what parse reads back to the same envelope (its `raw` aside). One canonical form;
+ * any words carried exactly.
+ *
+ * @param {import('../index.js').DialEnvelope | Omit<import('../index.js').DialEnvelope, 'raw'>} envelope
+ * @returns {string}
+ */
+export function serialize(envelope) {
+  return dial_serialize(JSON.stringify(envelope));
+}
+
+/**
+ * An `until` read: its condition ({ kind: 'runs', atLeast }) — or an Error saying why it is not one.
+ *
+ * @param {string} text
+ * @returns {import('../index.js').DialCondition}
+ */
+export function conditionOf(text) {
+  try { return JSON.parse(dial_condition(text)); } catch (e) { throw new Error(String(e?.message ?? e)); }
 }

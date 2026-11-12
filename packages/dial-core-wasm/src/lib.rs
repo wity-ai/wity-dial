@@ -1,5 +1,5 @@
 use wasm_bindgen::prelude::*;
-use dial_core::{parse, extract_prose, DialSessionContext, ExecutionResult};
+use dial_core::{condition, extract_prose, parse, serialize, DialEnvelope, DialSessionContext, ExecutionResult};
 
 /// Parse a <dial> envelope from AI response text.
 /// Returns JSON string of DialEnvelope, or null if no envelope found.
@@ -14,6 +14,23 @@ pub fn dial_parse(text: &str) -> Result<JsValue, JsValue> {
         Ok(None) => Ok(JsValue::NULL),
         Err(e) => Err(JsValue::from_str(&e.to_string())),
     }
+}
+
+/// Write an envelope (JSON of a DialEnvelope, as dial_parse gives it; `raw` not needed) as DIAL text — what dial_parse
+/// reads back to the same envelope.
+#[wasm_bindgen]
+pub fn dial_serialize(envelope_json: &str) -> Result<String, JsValue> {
+    let mut v: serde_json::Value = serde_json::from_str(envelope_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    if let Some(o) = v.as_object_mut() { o.entry("raw").or_insert(serde_json::Value::String(String::new())); }
+    let envelope: DialEnvelope = serde_json::from_value(v).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    Ok(serialize(&envelope))
+}
+
+/// An `until` read: JSON of its Condition — or an error saying why it is not one.
+#[wasm_bindgen]
+pub fn dial_condition(text: &str) -> Result<String, JsValue> {
+    let c = condition(text).map_err(|e| JsValue::from_str(&e))?;
+    serde_json::to_string(&c).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// Return the prose portions of a response — text outside any <dial> block.
