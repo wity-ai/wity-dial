@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DialAttributes {
@@ -19,6 +20,19 @@ pub struct DialStep {
     pub observe: Option<String>,
     pub r#yield: Option<Vec<String>>,
     pub command: String,
+}
+
+/// What a yield of an act is, beyond its name (written `<dial-yield name="…" role="…" make="…" model="…"/>` in the act).
+/// Each is the receiver's to read: DIAL carries them exactly and checks only that the act yields that name.
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct DialYield {
+    /// The part of what is being made that it fills (a composition's title, its content, a poll's question…) — named
+    /// by what is made, not by DIAL.
+    pub role: Option<String>,
+    /// What it is made into, when it is not the act's own words: a kind of media (image, video, audio…).
+    pub make: Option<String>,
+    /// How it is made: a capability (any model that has it, chosen when it is made) or one model's urn (that model).
+    pub model: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,6 +111,8 @@ pub struct ElementBase {
     pub observe: Option<String>,
     #[serde(rename = "yield")]
     pub r#yield: Option<Vec<String>>,
+    /// What some of its yields are, beyond their names — by name; each a name in `yield`. None: names only.
+    pub yield_of: Option<BTreeMap<String, DialYield>>,
     pub addressed_to: Option<String>,
     /// The role that performs the act (bound to a person, an agent or the system when a session starts). None: the
     /// system.

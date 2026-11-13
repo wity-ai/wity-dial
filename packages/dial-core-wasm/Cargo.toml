@@ -1,6 +1,6 @@
 [package]
 name = "dial-core-wasm"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 description = "WASM bindings for dial-core — consumed by wity-cli (Node.js) and ai-chat-wity-widget (browser)"
 license = "MIT"

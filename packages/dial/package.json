@@ -1,6 +1,6 @@
 {
   "name": "@wity.ai/dial",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "DIAL protocol \u2014 JS layer over dial-core WASM. Exposes parse, DialSession, and DialRouter.",
   "type": "module",
   "main": "./index.cjs",

@@ -3,7 +3,7 @@ use crate::error::DialError;
 use crate::escape::unescape;
 use regex::Regex;
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::OnceLock;
 
 /// A fixed pattern, compiled once — on first use — however often a reply is parsed (a streamed reply is parsed again as
@@ -138,10 +138,16 @@ fn parse_elements(xml: &str) -> Result<Vec<DialElement>, DialError> {
 }
 
 fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialElement>, DialError> {
+    let r#yield: Option<Vec<String>> = attr(attrs, "yield").map(|y| y.split_whitespace().map(String::from).collect());
+    let yield_of = parse_yields(inner, attr(attrs, "id").as_deref(), r#yield.as_deref().unwrap_or(&[]))?;
+    // what it says of its yields is not its words
+    let stripped = re!(r#"<dial-yield(?:[^>"']|"[^"]*"|'[^']*')*?/>"#).replace_all(inner, "").to_string();
+    let inner = stripped.as_str();
     let base = ElementBase {
         id: attr(attrs, "id"),
         observe: attr(attrs, "observe"),
-        r#yield: attr(attrs, "yield").map(|y| y.split_whitespace().map(String::from).collect()),
+        r#yield,
+        yield_of,
         addressed_to: attr(attrs, "addressed-to"),
         by: attr(attrs, "by"),
         until: attr(attrs, "until"),
@@ -213,6 +219,27 @@ fn parse_element(tag: &str, attrs: &str, inner: &str) -> Result<Option<DialEleme
     };
 
     Ok(Some(el))
+}
+
+/// An act's `<dial-yield name="…" …/>` elements, by name — each a name the act yields, said once.
+fn parse_yields(inner: &str, id: Option<&str>, names: &[String]) -> Result<Option<BTreeMap<String, DialYield>>, DialError> {
+    let re = re!(r#"<dial-yield((?:[^>"']|"[^"]*"|'[^']*')*?)/>"#);
+    let act = id.map(|i| format!("Act '{}'", i)).unwrap_or_else(|| "An act".into());
+    let mut out = BTreeMap::new();
+    for cap in re.captures_iter(inner) {
+        let a = &cap[1];
+        let Some(name) = attr(a, "name").filter(|n| !n.is_empty()) else {
+            return Err(DialError::Parse(format!("{act}: a dial-yield names the yield it is (name)")));
+        };
+        if !names.iter().any(|n| n == &name) {
+            return Err(DialError::Parse(format!("{act}: dial-yield '{name}' is not a yield of it (yield=\"{}\")", names.join(" "))));
+        }
+        let y = DialYield { role: attr(a, "role"), make: attr(a, "make"), model: attr(a, "model") };
+        if out.insert(name.clone(), y).is_some() {
+            return Err(DialError::Parse(format!("{act}: dial-yield '{name}' said twice")));
+        }
+    }
+    Ok(if out.is_empty() { None } else { Some(out) })
 }
 
 fn parse_steps(inner: &str) -> Vec<DialStep> {
