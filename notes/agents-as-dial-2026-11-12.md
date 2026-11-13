@@ -198,3 +198,52 @@ Built and released:
 To finish the switch, in order (on the server): migration 005 `--apply` (vritti-ideator-dialectics), then
 `migrate:run-exchange -- --apply` (vritti-ideator), then restart vritti-ideator. Then: the builder and
 @wity-ai/automation edit the exchange itself; `env="scene"` performers; yield roles; retiring the steps.
+
+## 10. Yield roles: the parts of what is made (agreed with the owner, 2026-11-13)
+
+**Status correction to §9:** the ideator *was* restarted (2026-11-12 16:48 UTC, with migrations 005 and run-exchange
+applied); runs perform the exchange.
+
+**Today (read 2026-11-13).** What a yield does is decided by tag names, matched as strings in three services, mixing
+what a yield is *for* with how it is *made*:
+
+| tag (prod: steps of live agents) | reader | what it says |
+|---|---|---|
+| `composition-title` (24), `composition-poster` (21) | composer `lifecycles/composition-process.js`; ideator `chain-of-thought-controlspace.js`; publisher `ebook-layout-config` | its title, its poster |
+| `composition-description` | publisher `gated-post.js`, `ebook-layout-config` | its description |
+| `post-commentary` (16) | publisher `composition-blocks.js` (a post's words) | what a post of it says |
+| `poll-question` (1), `poll-answer` (1) | publisher `pollOf` (LinkedIn poll, the poll compiler) | a poll's question, its choices |
+| `no-render` (20) | composer `chain-of-thought.js`, `composition-content.js` | not shown: thinking |
+| a tag *ending* in a media word, or `morphTarget=` (7) | composer `thought-media.js` `thoughtMediaOf` | what it is made into |
+| `image-post(-hq)`, `video-with-sound`, `video-clip-balanced`… | composer `media-recipes.js` | how it is made |
+| all of an agent's yields → `tagsRendered` | composer (choice of a template module) | — (the module path, to retire) |
+
+`yieldMap` / `yields` on the agent: never read or written by anything (prod: 0 of 184 agents) — retired.
+165 live agents (58 published); formats: blog 146, article 4, micro-blog 4, short-video 4, ebook 2, podcast 2,
+image-list 2, interactive-poll 1.
+
+**The model.** A yield is part of the exchange (DIAL 0.3.0): `<dial-yield name role make model/>`, read as `yieldOf`.
+- `role` — the **part** of the composition it fills. The parts are declared once, by format, in
+  `@wity-ai/scene-core` (`formats/parts.js`), beside each format's kind: every format has `title`, `description`,
+  `poster`, `content` (the default), `commentary` (the words a post of it carries) and `thinking` (kept on the board,
+  not shown); a poll adds `question` and `answer`. A new format declares its own parts; nothing else changes.
+- `make` — what it is made into when not words (image, video, audio…), said, never inferred from how a tag ends.
+- `model` — how: a capability (the morphogen selector picks the model when it is made — the composable default) or
+  one model's urn (strict). Steering tags (`image-post-hq`…) become this.
+- The run gives each thought its yield's part (`part`), carried with the thought to the composition (descriptor
+  vector), the way `creator`/`budget` are. Every reader asks for a part — `partOf(thought)`, one function in
+  scene-core — never a tag name. A caption is not a part: a composition's words under its image are that image's
+  (the board's tree), as the colouring-book export already reads them.
+
+**No change in behaviour.** `partOf` reads a thought's `part`; a thought without one (every one made before this, and
+every run of an agent not yet migrated) is read from its tags by the one legacy map in scene-core (`partOfTags`) — the
+same rules as today, in one place. The migration writes each agent's `<dial-yield>`s from the same map, so its runs
+give the same parts; a dry run per agent is reviewed before `--apply`. The legacy map is removed only when a prod
+count shows no composition read in the last N days relies on it.
+
+**Order.** 1 DIAL 0.3.0 (done, `6e3d772`). 2 scene-core parts (`PARTS`, `partsOfFormat`, `partOf`, `partOfTags`). 3
+automation: the exchange edited directly (`agent.acts.*`, a yield's part/make/model), `exchangeOf`/`actsOf` carry
+`yieldOf`. 4 dialectics: the exchange the source, steps derived while anything reads them. 5 ideator: a thought's
+`part` from its act; `make` from `yieldOf` before tags. 6 composer, publisher: `partOf` everywhere a tag was matched.
+7 migration (dry run → owner → `--apply`). 8 wity-mcp, Tara, the builder (a yield's part from its format's parts; its
+model suggested inline). 9 retire: `yieldMap`, `yields`, `tagsRendered`, the tag map — each after a prod count.
