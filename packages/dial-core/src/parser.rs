@@ -234,7 +234,7 @@ fn parse_yields(inner: &str, id: Option<&str>, names: &[String]) -> Result<Optio
         if !names.iter().any(|n| n == &name) {
             return Err(DialError::Parse(format!("{act}: dial-yield '{name}' is not a yield of it (yield=\"{}\")", names.join(" "))));
         }
-        let y = DialYield { role: attr(a, "role"), make: attr(a, "make"), model: attr(a, "model") };
+        let y = DialYield { part: attr(a, "part").map(|p| p.split_whitespace().map(String::from).collect()), make: attr(a, "make"), model: attr(a, "model") };
         if out.insert(name.clone(), y).is_some() {
             return Err(DialError::Parse(format!("{act}: dial-yield '{name}' said twice")));
         }

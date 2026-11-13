@@ -44,7 +44,7 @@ fn yields(b: &ElementBase) -> String {
     names.iter().filter_map(|n| of.get(n).map(|y| {
         let mut a = String::new();
         push_attr(&mut a, "name", Some(n));
-        push_attr(&mut a, "role", y.role.as_deref());
+        push_attr(&mut a, "part", y.part.as_ref().map(|p| p.join(" ")).as_deref());
         push_attr(&mut a, "make", y.make.as_deref());
         push_attr(&mut a, "model", y.model.as_deref());
         format!("<dial-yield{a}/>")

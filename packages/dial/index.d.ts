@@ -26,8 +26,9 @@ export interface DialOption {
 
 /** What a yield of an act is, beyond its name (`<dial-yield name role make model/>`) — the receiver's to read. */
 export interface DialYield {
-  /** The part of what is being made that it fills (a title, the content, a poll's question…): named by what is made. */
-  role?: string | null;
+  /** The parts of what is being made that it fills (a title, the content, a poll's question…) — one yield may fill
+   *  several; named by what is made. Not a role: a role is who performs an act (`by`). */
+  part?: string[] | null;
   /** What it is made into, when not the act's own words: a kind of media (image, video, audio…). */
   make?: string | null;
   /** How it is made: a capability (any model that has it, chosen when made) or one model's urn. */
