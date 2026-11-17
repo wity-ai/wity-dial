@@ -8,7 +8,8 @@ Domain-agnostic; domains and surfaces plug in. wity-app's chat panel and `wity o
 import { Conversation, policyHuman, scriptedHuman } from '@wity-ai/dial-runtime';
 
 const conversation = new Conversation({
-  agent:  { send: async (message) => replyText },             // the assistant
+  agent:  { send: async (message, { utterance }) => replyText }, // the assistant; utterance: what the person said in
+                                                                // this turn ('' when nothing), for its history
   domain: { actions, validate, preview, run, context },       // e.g. boardDomain(...) from @wity-ai/authoring
   human:  { decide: async (suggestion) => ({ accept: true }), answer: async (ask) => '…' },
   onEvent: (event) => render(event),   // sent · reply · inform · ask · suggestion · outcome · no-reply · turn-limit

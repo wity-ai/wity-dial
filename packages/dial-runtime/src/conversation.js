@@ -102,7 +102,7 @@ export class Conversation {
             const live = new LiveReply(turn, (e) => this.#onEvent(e));
             let reply;
             try {
-                reply = await this.#send(message, live);
+                reply = await this.#send(message, live, words ?? '');
             } catch (e) {
                 await live.close();
                 keep(turn);
@@ -146,7 +146,7 @@ export class Conversation {
         if (!String(reply ?? '').trim() || await parse(reply)) return reply;
         this.#onEvent({ type: 'off-protocol', turn, text: reply });
         try {
-            const again = await this.#send(REPLY_AGAIN);
+            const again = await this.#send(REPLY_AGAIN, null, '');
             return String(again ?? '').trim() ? again : reply;
         } catch (e) {
             if (!(e instanceof NoReplyError)) throw e;
@@ -154,11 +154,14 @@ export class Conversation {
         }
     }
 
-    // an agent that streams its reply is told where (onProgress: the reply so far); one that does not, ignores it
-    #send(message, live) {
+    // the agent is told what the person said in this turn (utterance: their words, '' when they said nothing in it — an
+    // outcome report, a request to reply again), which a conversation's history shows as theirs in place of the message
+    // composed for it; one that streams its reply is told where (onProgress: the reply so far). One that needs neither
+    // ignores them.
+    #send(message, live, utterance) {
         let timer;
         const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(new NoReplyError(this.#timeoutMs)), this.#timeoutMs); });
-        const sent = this.#agent.send(message, live ? { onProgress: (text) => live.progress(text) } : undefined);
+        const sent = this.#agent.send(message, { utterance, ...(live && { onProgress: (text) => live.progress(text) }) });
         return Promise.race([Promise.resolve(sent), limit]).finally(() => clearTimeout(timer));
     }
 

@@ -328,3 +328,16 @@ test('a payload that is not JSON (a comment, an abbreviation): told so — never
     assert.ok(!('field' in told), 'no field is named missing');
     assert.deepEqual(domain.notes, ['milk']);
 });
+
+test('the agent is told what the person said in each turn (utterance): their words, none in an outcome report or a request to reply again', async () => {
+    const domain = notesDomain();
+    const utterances = [];
+    const replies = [
+        'Sure.',                                                   // not in DIAL: asked for again
+        dial('<dial-inform>Adding it.</dial-inform>', suggest('add-note', { text: 'Strong brand' })),
+        dial('<dial-acknowledge>Done.</dial-acknowledge>'),
+    ];
+    const agent = { async send(message, o) { utterances.push(o?.utterance); return replies.shift(); } };
+    await new Conversation({ agent, domain, human: policyHuman('accept') }).say('add strong brand');
+    assert.deepEqual(utterances, ['add strong brand', '', '']);
+});

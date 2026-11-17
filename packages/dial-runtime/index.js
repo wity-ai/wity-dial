@@ -5,7 +5,9 @@
  *   const conv = new Conversation({ agent, domain, human });
  *   await conv.say("put 'Strong brand' under Strengths");
  *
- *   agent  — { send(text, { onProgress }?) → Promise<reply text> }   the transport to the assistant; one that streams
+ *   agent  — { send(text, { utterance, onProgress? }) → Promise<reply text> }   the transport to the assistant; utterance:
+ *                                                               what the person said in this turn ('' when nothing) —
+ *                                                               what a history shows as theirs; one that streams
  *                                                               calls onProgress(the reply so far) as it comes
  *   domain — { actions, validate, preview, run, context }     a vocabulary (e.g. thoughtbooks); see Domain below
  *   human  — { decide(suggestion), answer(ask) }              a TUI, an app's cards, or a policy (tests)
