@@ -14,7 +14,7 @@ The runtime lives in this repository and is not yet published to the public npm 
 import { Conversation } from '@wity.ai/dial-runtime';
 
 const conversation = new Conversation({
-  agent:  { send: async (message) => replyText },          // the transport to the agent
+  agent:  { send: async (message, { utterance, onProgress }) => replyText },  // the transport to the agent
   domain: { actions, validate, preview, run, context },    // the vocabulary it may act on
   human:  { decide: async (suggestion) => ({ accept: true }),
             answer: async (ask) => 'yes' },                // a person, or a policy
@@ -33,6 +33,8 @@ const { status, turns, outcomes } = await conversation.say('add a note: buy milk
 | `turn-limit` | `maxTurns` (default 8) turns were used |
 
 If `agent.send` rejects for any other reason, `say` rejects with that error.
+
+Each send says what the person said in that turn — `utterance`: their words, `''` when they said nothing in it (an outcome report, a request to reply again). The message is more (the domain's context, the outcomes); a transport that keeps the conversation stores the utterance with it, so its history shows the person's words. An agent that streams its reply is given `onProgress` (the reply so far).
 
 ## One turn
 
