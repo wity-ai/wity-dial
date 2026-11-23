@@ -3,18 +3,19 @@ export class NoReplyError extends Error {
 }
 export class Conversation {
     /**
-     * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns? }} opts
+     * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns?, speaksDial?: () => boolean }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
      *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
  *     suggestion · outcome · no-reply · turn-limit
      */
-    constructor({ agent, domain, human, onEvent, timeoutMs, maxTurns }: {
+    constructor({ agent, domain, human, onEvent, timeoutMs, maxTurns, speaksDial }: {
         agent: any;
         domain: any;
         human: any;
         onEvent?: any;
         timeoutMs?: any;
         maxTurns?: any;
+        speaksDial?: () => boolean;
     });
     /**
      * The person says something; runs turns until the agent needs nothing back.

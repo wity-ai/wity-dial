@@ -341,3 +341,16 @@ test('the agent is told what the person said in each turn (utterance): their wor
     await new Conversation({ agent, domain, human: policyHuman('accept') }).say('add strong brand');
     assert.deepEqual(utterances, ['add strong brand', '', '']);
 });
+
+test('an agent that answers in prose by design is told as it is, and never asked again', async () => {
+    const sent = []; const events = [];
+    const conversation = new Conversation({
+        agent: { send: async (m) => { sent.push(m); return 'plain words'; } },
+        domain: { actions: {}, validate: () => ({ ok: true }), preview: (a) => a, run: () => {} },
+        human: policyHuman('dismiss'), onEvent: (e) => events.push(e), speaksDial: () => false,
+    });
+    await conversation.say('hello');
+    assert.equal(sent.length, 1);
+    assert.deepEqual(events.filter((e) => e.type === 'inform').map((e) => e.text), ['plain words']);
+    assert.equal(events.some((e) => e.type === 'off-protocol'), false);
+});

@@ -55,24 +55,25 @@ export class NoReplyError extends Error {
 const MAX_EDIT_ATTEMPTS = 3;
 
 export class Conversation {
-    #agent; #domain; #human; #onEvent; #timeoutMs; #maxTurns;
+    #agent; #domain; #human; #onEvent; #timeoutMs; #maxTurns; #speaksDial;
     #count = 0;
     #pendingText = null;                 // words the person wrote while a suggestion was pending
     #undelivered = [];                   // outcomes the agent hasn't been told yet (a send failed / no reply)
     #unsentWords = null;                 // the person's words from inside a turn that never reached the agent
 
     /**
-     * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns? }} opts
+     * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns?, speaksDial?: () => boolean }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
      *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
  *     suggestion · outcome · no-reply · turn-limit
      */
-    constructor({ agent, domain, human, onEvent = () => {}, timeoutMs = 90_000, maxTurns = 8 }) {
+    constructor({ agent, domain, human, onEvent = () => {}, timeoutMs = 90_000, maxTurns = 8, speaksDial = () => true }) {
         for (const [name, value, method] of [['agent', agent, 'send'], ['human', human, 'decide'], ['domain', domain, 'run']]) {
             if (typeof value?.[method] !== 'function') throw new Error(`Conversation: ${name} needs a ${method}() method`);
         }
         this.#agent = agent; this.#domain = domain; this.#human = human;
         this.#onEvent = onEvent; this.#timeoutMs = timeoutMs; this.#maxTurns = maxTurns;
+        this.#speaksDial = speaksDial;       // false: an agent that answers in prose by design — its reply is what it told, never asked for again
     }
 
     /**
@@ -143,7 +144,7 @@ export class Conversation {
     // the reply to use: as it is when it is DIAL (or empty); else what the agent gives when asked again (REPLY_AGAIN),
     // or the first if it gives nothing in time. Not a turn of its own: the turn limit is the person's turns.
     async #conform(reply, turn) {
-        if (!String(reply ?? '').trim() || await parse(reply)) return reply;
+        if (!this.#speaksDial() || !String(reply ?? '').trim() || await parse(reply)) return reply;
         this.#onEvent({ type: 'off-protocol', turn, text: reply });
         try {
             const again = await this.#send(REPLY_AGAIN, null, '');
