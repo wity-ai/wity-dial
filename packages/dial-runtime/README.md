@@ -12,7 +12,7 @@ const conversation = new Conversation({
                                                                 // this turn ('' when nothing), for its history
   domain: { actions, validate, preview, run, context },       // e.g. boardDomain(...) from @wity-ai/authoring
   human:  { decide: async (suggestion) => ({ accept: true }), answer: async (ask) => '…' },
-  onEvent: (event) => render(event),   // sent · reply · inform · ask · suggestion · outcome · no-reply · turn-limit
+  onEvent: (event) => render(event),   // sent · reply · inform · ask · suggestion · outcome · no-reply · refused-again · turn-limit
 });
 await conversation.say('add a card called Plan');
 ```
