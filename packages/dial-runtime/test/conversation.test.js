@@ -156,6 +156,31 @@ test('an agent that keeps proposing stops at maxTurns', async () => {
     assert.equal(r.status, 'turn-limit'); assert.equal(r.outcomes.length, 3);
 });
 
+test('suggested again, refused for the same reason: it stops, shows why, and the agent is told with the next words — never retried unseen to the limit', async () => {
+    const replies = Array.from({ length: 10 }, (_, n) => dial(`<dial-inform>Trying ${n}…</dial-inform>`, suggest('no-such-action', { n })));
+    const agent = scriptedAgent([...replies]);
+    const events = [];
+    const c = new Conversation({ agent, domain: notesDomain(), human: policyHuman(), onEvent: (e) => events.push(e) });
+    const r = await c.say('make it');
+    assert.deepEqual([r.status, r.turns], ['refused-again', 2]);
+    const stop = events.find((e) => e.type === 'refused-again');
+    assert.equal(stop.action, 'no-such-action');
+    assert.match(stop.hint, /There is no action 'no-such-action'/);
+    assert.equal(events.filter((e) => e.type === 'inform').length, 2, 'two tries shown, not eight');
+    const toldBefore = agent.sent.length;
+    await c.say('try another way');
+    const next = agent.sent[toldBefore];
+    assert.match(next, /Refused again for the same reason[\s\S]*The user was shown why[\s\S]*try another way$/, 'told the person saw it, with their next words');
+    assert.ok(!/They never saw it/.test(next), 'not as if it were new');
+});
+
+test('refused for a different reason each time: it goes on, as it finds its way', async () => {
+    const replies = [dial(suggest('no-such-action', {})), dial(suggest('other-missing', {})), dial('<dial-inform>Done.</dial-inform>')];
+    const r = await new Conversation({ agent: scriptedAgent(replies), domain: notesDomain(), human: policyHuman() }).say('go');
+    assert.equal(r.status, 'idle');
+    assert.equal(r.turns, 3);
+});
+
 test('a message can carry its own turn limit — the next one is back to the conversation\'s', async () => {
     const replies = Array.from({ length: 20 }, () => dial(suggest('list-notes', {})));
     const c = new Conversation({ agent: scriptedAgent(replies), domain: notesDomain(), human: policyHuman(), maxTurns: 5 });

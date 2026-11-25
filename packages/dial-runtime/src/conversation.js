@@ -24,7 +24,9 @@
  *
  * Every suggestion ends in exactly one outcome, and the agent is told it (see outcome.js). The loop continues while
  * there is something to tell the agent, and stops when a reply needs nothing back, when the agent doesn't answer
- * in time ('no-reply'), or after maxTurns ('turn-limit'). What the agent wasn't told — the send failed, or it
+ * in time ('no-reply'), when it suggests again what was refused already in this message, for the same reason
+ * ('refused-again': it is not finding its way — the person is shown why, the agent told with their next words, never
+ * left to try unseen till the limit), or after maxTurns ('turn-limit'). What the agent wasn't told — the send failed, or it
  * didn't answer — is kept and goes with the next thing the person says: the outcomes, and words the person gave
  * inside the conversation (an answer to its question, or what they wrote instead of deciding). say('') sends just that.
  *
@@ -65,7 +67,7 @@ export class Conversation {
      * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns?, speaksDial?: () => boolean }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
      *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
- *     suggestion · outcome · no-reply · turn-limit
+ *     suggestion · outcome · no-reply · refused-again { turn, action, preview, hint? } · turn-limit
      */
     constructor({ agent, domain, human, onEvent = () => {}, timeoutMs = 90_000, maxTurns = 8, speaksDial = () => true }) {
         for (const [name, value, method] of [['agent', agent, 'send'], ['human', human, 'decide'], ['domain', domain, 'run']]) {
@@ -81,7 +83,7 @@ export class Conversation {
      * @param {string} text
      * @param {{ maxTurns?: number }} [o]  this message's turn limit, when it is not the conversation's (an agent whose
      *                                     domain changed — it can act now, or no longer can)
-     * @returns {Promise<{ status: 'idle' | 'no-reply' | 'turn-limit', turns: number, outcomes: object[] }>}
+     * @returns {Promise<{ status: 'idle' | 'no-reply' | 'refused-again' | 'turn-limit', turns: number, outcomes: object[] }>}
      */
     async say(text, { maxTurns = this.#maxTurns } = {}) {
         const allOutcomes = [];
@@ -91,6 +93,8 @@ export class Conversation {
         this.#unsentWords = null;
         // what this turn owes the agent stays owed if it can't be delivered (the first turn's words are the caller's)
         const keep = (turn) => { this.#undelivered = outcomes; if (turn > 1) this.#unsentWords = words; };
+        // what was refused in this message, and why: suggested again for the same reason, it is not going anywhere
+        const refused = new Set();
         for (let turn = 1; ; turn++) {
             if (turn > maxTurns) {
                 keep(turn);
@@ -122,6 +126,14 @@ export class Conversation {
             outcomes = next;
             words = this.#pendingText ?? answer ?? null;
             this.#pendingText = null;
+            const again = words === null && next.find((o) => o.status === 'invalid' && refused.has(refusalOf(o)));
+            for (const o of next) if (o.status === 'invalid') refused.add(refusalOf(o));
+            if (again) {
+                // the agent is told the person saw this one (outcome.js): it is not to be put to them as new
+                this.#undelivered = outcomes.map((o) => (o === again ? { ...o, shown: true } : o));
+                this.#onEvent({ type: 'refused-again', turn, action: again.action, preview: again.preview, ...(again.hint && { hint: again.hint }) });
+                return { status: 'refused-again', turns: turn, outcomes: allOutcomes };
+            }
             // a turn follows only when there is something the agent should react to now: the person's words, or an
             // action that ran / couldn't. A dismissal alone waits — it goes with the next thing the person says.
             if (words === null && !outcomes.some(needsReply)) {
@@ -282,5 +294,7 @@ export const UNREADABLE_HINT = "Write the payload as plain JSON: no comments (//
 
 // what the agent should react to now — the rest (dismissed, superseded, handed-off) waits for the person's next words
 const needsReply = (outcome) => ['done', 'failed', 'invalid'].includes(outcome.status);
+// a refusal as what was refused and why — the same one, whatever the suggestion's id or wording around it
+const refusalOf = (o) => JSON.stringify([o.action, o.code ?? '', o.field ?? '', o.hint ?? '']);
 const issue = (check) => pick(check, ['code', 'field', 'hint']);
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undefined).map((k) => [k, o[k]]));

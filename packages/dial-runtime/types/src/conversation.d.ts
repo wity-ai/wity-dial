@@ -6,7 +6,7 @@ export class Conversation {
      * @param {{ agent, domain, human, onEvent?, timeoutMs?, maxTurns?, speaksDial?: () => boolean }} opts
      *   onEvent(event) — every step, for a surface to render and for transcripts:
      *     sent · reply-progress (the reply so far, as it comes) · reply · inform (act: 'inform' | 'acknowledge') · ask ·
- *     suggestion · outcome · no-reply · turn-limit
+ *     suggestion · outcome · no-reply · refused-again { turn, action, preview, hint? } · turn-limit
      */
     constructor({ agent, domain, human, onEvent, timeoutMs, maxTurns, speaksDial }: {
         agent: any;
@@ -22,12 +22,12 @@ export class Conversation {
      * @param {string} text
      * @param {{ maxTurns?: number }} [o]  this message's turn limit, when it is not the conversation's (an agent whose
      *                                     domain changed — it can act now, or no longer can)
-     * @returns {Promise<{ status: 'idle' | 'no-reply' | 'turn-limit', turns: number, outcomes: object[] }>}
+     * @returns {Promise<{ status: 'idle' | 'no-reply' | 'refused-again' | 'turn-limit', turns: number, outcomes: object[] }>}
      */
     say(text: string, { maxTurns }?: {
         maxTurns?: number;
     }): Promise<{
-        status: "idle" | "no-reply" | "turn-limit";
+        status: "idle" | "no-reply" | "refused-again" | "turn-limit";
         turns: number;
         outcomes: object[];
     }>;

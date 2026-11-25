@@ -17,7 +17,8 @@ const ACK_TEXT = {
     failed: (o) => `Couldn't do it: ${o.preview || o.action}.`,
     // the person never saw it: corrected, it is proposed as if for the first time — an attempt they did not see is not
     // theirs to hear about
-    invalid: (o) => `${o.code === 'unknown-action'
+    // refused again for the same reason (conversation.js 'refused-again'): the loop stopped and the person was shown why
+    invalid: (o) => o.shown ? `Refused again for the same reason, so not tried a third time: ${o.action}. The user was shown why and has the next word — answer what they say next; never propose it the same way again: take another way, or say plainly what cannot be done and what can.` : `${o.code === 'unknown-action'
         ? `Not proposed to the user — there is no action ${o.action} here.`
         : `Not proposed to the user — the payload for ${o.action} is invalid.`} They never saw it: propose the corrected one as if it were the first — say nothing of an earlier attempt, an error, or an action's name.`,
     dismissed: (o) => `The user dismissed: ${o.preview || o.action}.`,
